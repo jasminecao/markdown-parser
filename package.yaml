@@ -29,7 +29,7 @@ dependencies:
 - containers == 0.6.2.1
 - mtl
 - parsec
-
+- raw-strings-qq
 
 library:
   source-dirs: src

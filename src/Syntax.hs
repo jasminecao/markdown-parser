@@ -24,3 +24,9 @@ data ElementType
   | Code
   | Table
   deriving (Eq, Show)
+
+reservedMarkdownChars :: [Char] =
+  [ '*',
+    '~',
+    '`'
+  ]
