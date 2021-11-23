@@ -1,5 +1,5 @@
 {-# LANGUAGE QuasiQuotes #-}
-
+module SampleText where
 import Text.RawString.QQ
 
 paragraph :: String

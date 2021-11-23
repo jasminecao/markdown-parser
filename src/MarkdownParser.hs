@@ -1,9 +1,9 @@
 module MarkdownParser where
 
-import Syntax (Content (Element, Text), ElementType (..), reservedMarkdownChars)
-import Text.ParserCombinators.Parsec
-import Text.Parsec.Token
 import Data.Char (isSpace)
+import Syntax (Content (E, Text), EType (..), reservedMarkdownChars)
+import Text.Parsec.Token
+import Text.ParserCombinators.Parsec
 
 -- TODO: add error filepath arg to parse
 parseMarkdown :: String -> Either ParseError Content
@@ -20,7 +20,7 @@ blockP = headingP <|> ulListP <|> olListP <|> quoteP <|> codeBlockP <|> lineP
 headingP :: Parser Content
 headingP = do
   hx <- wsP $ many1 (char '#')
-  Element (Heading (length hx)) <$> lineP
+  E (Heading (length hx)) <$> lineP
 
 ulListP :: Parser Content
 ulListP = undefined
@@ -28,27 +28,29 @@ ulListP = undefined
 olListP :: Parser Content
 olListP = undefined
 
--- quoteP :: Parser Content
+quoteP :: Parser Content
+quoteP = undefined
+
 -- quoteP = Element BlockQuote <$> many (between (string ">") (string ">") textP)
 
 codeBlockP :: Parser Content
-codeBlockP = Element CodeBlock <$> between (string "```") (string "```") textP
+codeBlockP = E CodeBlock <$> between (string "```") (string "```") textP
 
 -- parses a line to handle style (bold, italics, etc), inline code
 lineP :: Parser Content
 lineP = boldP <|> italicP <|> strikeP <|> inlineCodeP <|> textP
 
 boldP :: Parser Content
-boldP = Element Bold <$> between (string "**") (string "**") textP
+boldP = E Bold <$> between (string "**") (string "**") textP
 
 italicP :: Parser Content
-italicP = Element Italic <$> between (char '*') (char '*') textP
+italicP = E Italic <$> between (char '*') (char '*') textP
 
 strikeP :: Parser Content
-strikeP = Element Strikethrough <$> between (char '~') (char '~') textP
+strikeP = E Strikethrough <$> between (char '~') (char '~') textP
 
 inlineCodeP :: Parser Content
-inlineCodeP = Element InlineCode <$> between (char '`') (char '`') textP
+inlineCodeP = E InlineCode <$> between (char '`') (char '`') textP
 
 textP :: Parser Content
 textP = Text <$> many1 (satisfy notReservedChar)
@@ -57,4 +59,3 @@ textP = Text <$> many1 (satisfy notReservedChar)
 
 wsP :: Parser a -> Parser a
 wsP p = p <* many (satisfy isSpace)
-
