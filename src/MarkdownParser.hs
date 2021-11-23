@@ -1,6 +1,6 @@
 module MarkdownParser where
 
-import Syntax (Content (Element, Text), ElementType (Heading), reservedMarkdownChars)
+import Syntax (Content (Element, Text), ElementType (..), reservedMarkdownChars)
 import Text.ParserCombinators.Parsec
 import Text.Parsec.Token
 import Data.Char (isSpace)
@@ -14,7 +14,7 @@ markdownP = blockP
 
 -- parses for a block of markdown (headings, lists, quotes, code blocks)
 blockP :: Parser Content
-blockP = headingP <|> listP <|> quoteP <|> codeBlockP <|> lineP
+blockP = headingP <|> ulListP <|> olListP <|> quoteP <|> codeBlockP <|> lineP
 
 -- parses for # heading and converts rest of line to Text
 headingP :: Parser Content
@@ -22,31 +22,33 @@ headingP = do
   hx <- wsP $ many1 (char '#')
   Element (Heading (length hx)) <$> lineP
 
-listP :: Parser Content
-listP = undefined
+ulListP :: Parser Content
+ulListP = undefined
 
-quoteP :: Parser Content
-quoteP = undefined
+olListP :: Parser Content
+olListP = undefined
+
+-- quoteP :: Parser Content
+-- quoteP = Element BlockQuote <$> many (between (string ">") (string ">") textP)
 
 codeBlockP :: Parser Content
-codeBlockP = undefined
+codeBlockP = Element CodeBlock <$> between (string "```") (string "```") textP
 
 -- parses a line to handle style (bold, italics, etc), inline code
--- TODO: handle inline syntax
 lineP :: Parser Content
-lineP = Text <$> many anyChar
+lineP = boldP <|> italicP <|> strikeP <|> inlineCodeP <|> textP
 
 boldP :: Parser Content
-boldP = undefined -- between (char '*') (char '*') textP
+boldP = Element Bold <$> between (string "**") (string "**") textP
 
 italicP :: Parser Content
-italicP = between (char '*') (char '*') textP
+italicP = Element Italic <$> between (char '*') (char '*') textP
 
 strikeP :: Parser Content
-strikeP = undefined
+strikeP = Element Strikethrough <$> between (char '~') (char '~') textP
 
-codeP :: Parser Content
-codeP = undefined
+inlineCodeP :: Parser Content
+inlineCodeP = Element InlineCode <$> between (char '`') (char '`') textP
 
 textP :: Parser Content
 textP = Text <$> many1 (satisfy notReservedChar)

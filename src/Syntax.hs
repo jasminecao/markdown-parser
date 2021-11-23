@@ -2,6 +2,7 @@ module Syntax where
 
 data Content
   = Text String
+  | Empty -- for elements like <br>
   | Element ElementType Content
   deriving (Eq, Show)
 
@@ -11,22 +12,32 @@ data ElementType
   | OrderedList [ElementType] -- ol
   | UnorderedList [ElementType] -- ul
   | ListItem
-  | Link -- a
-  | Container -- div, section, main
+  | Link String -- a
+  | Container -- needed??? div, section, main
   | Head
   | Body
   | BlockQuote
-  | Hr
-  | Br
+  | Hr -- empty
+  | Br -- empty
   | Bold
   | Italic
   | Underline
-  | Code
-  | Table
+  | Strikethrough
+  | InlineCode
+  | CodeBlock
+  | Table TableType
+  deriving (Eq, Show)
+
+data TableType
+  = TableHead [TableType]
+  | TableBody [TableType]
+  | TableRow [TableType]
+  | TableCell String
   deriving (Eq, Show)
 
 reservedMarkdownChars :: [Char] =
   [ '*',
     '~',
-    '`'
+    '`',
+    '>'
   ]
