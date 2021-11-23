@@ -28,6 +28,7 @@ dependencies:
 - QuickCheck >= 2.14.2
 - containers == 0.6.2.1
 - mtl
+- parsec
 
 
 library:
