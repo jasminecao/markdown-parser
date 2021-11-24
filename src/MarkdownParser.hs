@@ -27,13 +27,17 @@ headingP = do
   Heading (length hx) <$> lineP
 
 ulListP :: Parser Block
-ulListP = UnorderedList <$> many (string "- " *> lineP)
+ulListP = UnorderedList <$> 
+  many (string "- " *> lineP)
 
 olListP :: Parser Block
-olListP = OrderedList <$> many (int *> char '.' *> space *> lineP)
+olListP = OrderedList <$> many (int *> char '.' *> many1 space *> lineP)
+
+linkP :: Parser Block
+linkP = undefined -- (Link <$> brackets stringP) <$> parens lineP
 
 quoteP :: Parser Block
-quoteP = BlockQuote <$> ((++) <$> string ">" *> stringP)
+quoteP = BlockQuote <$> (concat <$> many1 (string ">" *> stringP))
 
 paragraphP :: Parser Block
 paragraphP = Paragraph <$> lineP
@@ -41,9 +45,15 @@ paragraphP = Paragraph <$> lineP
 codeBlockP :: Parser Block
 codeBlockP = CodeBlock <$> between (string "```") (string "```") stringP
 
+hrP :: Parser Block
+hrP = string "---" *> pure Hr
+
+brP :: Parser Block -- ???
+brP = undefined -- Br <$> string "---"
+
 -- parses a line to handle style (bold, italics, etc), inline code
 lineP :: Parser S.Line
-lineP = S.Line <$> many (textP <* char '\n' <|> textP <* Parsec.eof)
+lineP = S.Line <$> many textP
 
 textP :: Parser Text
 textP = boldP <|> italicP <|> strikeP <|> inlineCodeP <|> normalP
