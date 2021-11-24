@@ -3,8 +3,9 @@ module MarkdownParser where
 import Data.Char (isSpace)
 import Syntax (Block (..), Doc (Doc), Line, Text (..), reservedMarkdownChars)
 import qualified Syntax as S
+import qualified Control.Monad as Monad
 import Text.Parsec.Token
-import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.Parsec as Parsec
 
 -- TODO: add error filepath arg to parse
 parseMarkdown :: String -> Either ParseError Doc
@@ -22,28 +23,27 @@ blockP = headingP <|> ulListP <|> olListP <|> quoteP <|> codeBlockP <|> paragrap
 headingP :: Parser Block
 headingP = do
   hx <- wsP $ many1 (char '#')
+  Monad.guard (length hx < 7)
   Heading (length hx) <$> lineP
 
 ulListP :: Parser Block
-ulListP = undefined
+ulListP = UnorderedList <$> many (string "- " *> lineP)
 
 olListP :: Parser Block
-olListP = undefined
+olListP = OrderedList <$> many (int *> char '.' *> space *> lineP)
 
 quoteP :: Parser Block
-quoteP = undefined
-
--- quoteP = Element BlockQuote <$> many (between (string ">") (string ">") textP)
+quoteP = BlockQuote <$> ((++) <$> string ">" *> stringP)
 
 paragraphP :: Parser Block
-paragraphP = undefined
+paragraphP = Paragraph <$> lineP
 
 codeBlockP :: Parser Block
 codeBlockP = CodeBlock <$> between (string "```") (string "```") stringP
 
 -- parses a line to handle style (bold, italics, etc), inline code
 lineP :: Parser S.Line
-lineP = S.Line <$> many textP
+lineP = S.Line <$> many (textP <* char '\n' <|> textP <* Parsec.eof)
 
 textP :: Parser Text
 textP = boldP <|> italicP <|> strikeP <|> inlineCodeP <|> normalP
@@ -70,3 +70,6 @@ stringP = many1 (satisfy notReservedChar)
 
 wsP :: Parser a -> Parser a
 wsP p = p <* many (satisfy isSpace)
+
+int :: Parser Int
+int = read <$> ((++) <$> string "-" <*> many1 digit <|> many1 digit)
