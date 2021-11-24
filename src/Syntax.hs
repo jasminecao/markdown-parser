@@ -41,7 +41,6 @@ instance Monoid Line where
 data Text
   = Bold String
   | Italic String
-  | Underline String
   | Strikethrough String
   | InlineCode String
   | Normal String

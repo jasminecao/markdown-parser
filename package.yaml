@@ -30,6 +30,7 @@ dependencies:
 - mtl
 - parsec
 - raw-strings-qq
+- pretty
 
 library:
   source-dirs: src
