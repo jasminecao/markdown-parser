@@ -26,12 +26,9 @@ source-repository head
 library
   exposed-modules:
       HTMLParser
-      HUnitTests
       Lib
       MarkdownParser
       PrettyPrinter
-      QCTests
-      SampleText
       Syntax
   other-modules:
       Paths_project_cis552
@@ -105,6 +102,9 @@ test-suite project-cis552-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      HUnitTests
+      QCTests
+      SampleText
       Paths_project_cis552
   hs-source-dirs:
       test
