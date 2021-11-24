@@ -7,14 +7,14 @@ import qualified Control.Monad as Monad
 import Text.Parsec.Token
 import Text.ParserCombinators.Parsec as Parsec
 import Test.HUnit
-import qualified Test.QuickCheck
+import Test.QuickCheck (Arbitrary, Gen, arbitrary, shrink, oneof, choose)
 
 -- class PP a where
 --   pp :: a -> Content
 
 instance Arbitrary Text where
     arbitrary = 
-        elements
+        oneof
             [ Bold <$> arbitrary,
               Italic <$> arbitrary,
               Underline <$> arbitrary,
@@ -23,26 +23,26 @@ instance Arbitrary Text where
               Normal <$> arbitrary
             ]
 
-    shrink Bold str = Bold $ shrink str
-    shrink Italic str = Italic $ shrink str
-    shrink Underline str = Underline $ shrink str
-    shrink Strikethrough str = Strikethrough $ shrink str
-    shrink InlineCode str = InlineCode $ shrink str
-    shrink Normal str = Normal $ shrink str
+    shrink (Bold str) = Bold <$> shrink str
+    shrink (Italic str) = Italic <$> shrink str
+    shrink (Underline str) = Underline <$> shrink str
+    shrink (Strikethrough str) = Strikethrough <$> shrink str
+    shrink (InlineCode str) = InlineCode <$> shrink str
+    shrink (Normal str) = Normal <$> shrink str
 
 instance Arbitrary S.Line where
     arbitrary = S.Line <$> arbitrary
 
-    shrink (S.Line (x:xs)) = Line xs
+    shrink (S.Line (x:xs)) = [S.Line xs]
     shrink _ = []
 
 instance Arbitrary TableType where
     arbitrary = 
-        elements
-            [ TableHead arbitrary,
-              TableBody arbitrary,
-              TableRow arbitrary,
-              TableCell $ Line <$> arbitrary
+        oneof
+            [ TableHead <$> arbitrary,
+              TableBody <$> arbitrary,
+              TableRow <$> arbitrary,
+              TableCell . S.Line <$> arbitrary
             ]
 
     shrink (TableHead b) = b
@@ -64,19 +64,19 @@ instance Arbitrary Block where
         genTable
       ]
     where
-      genHeading = Heading . choose (1, 6) <$> arbitrary
+      genHeading = (Heading <$> choose (1, 6)) <*> arbitrary
       genParagraph = Paragraph <$> arbitrary
       genOrderedList = OrderedList <$> arbitrary
       genUnorderedList = UnorderedList <$> arbitrary
-      genLink = Link <$> arbitrary
+      genLink = (Link <$> arbitrary) <*> arbitrary
       genBlockQuote = BlockQuote <$> arbitrary
-      genHr = return Hr
-      genBr = return Br
+      genHr = pure Hr
+      genBr = pure Br
       genTable = arbitrary
 
-  shrink (Heading n ln) = Heading n (shrink ln)
-  shrink (Paragraph ln) = Paragraph $ shrink ln
-  shrink (OrderedList ln) = OrderedList $ shrink ln
+  shrink (Heading n ln) = Heading n <$> shrink ln
+  shrink (Paragraph ln) = Paragraph <$> shrink ln
+  shrink (OrderedList ln) = OrderedList <$> shrink ln
 
 -- prop_roundtrip_val :: Value -> Bool
 -- prop_roundtrip_val v = P.parse valueP (pretty v) == Right v
