@@ -51,5 +51,6 @@ reservedMarkdownChars :: [Char] =
   [ '*',
     '~',
     '`',
-    '>'
+    '>',
+    '\n'
   ]

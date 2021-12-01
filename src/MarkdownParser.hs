@@ -2,6 +2,7 @@ module MarkdownParser where
 
 import qualified Control.Monad as Monad
 import Data.Char (isSpace)
+import Data.Functor
 import Syntax (Block (..), Doc (Doc), Line, Text (..), reservedMarkdownChars)
 import qualified Syntax as S
 import Text.Parsec.Token
@@ -18,7 +19,7 @@ markdownP = Doc <$> many blockP
 -- TODO: add end of line check (\n)
 -- parses for a block of markdown (headings, lists, quotes, code blocks)
 blockP :: Parser Block
-blockP = headingP <|> ulListP <|> olListP <|> quoteP <|> codeBlockP <|> paragraphP
+blockP = brP <|> headingP <|> ulListP <|> olListP <|> quoteP <|> codeBlockP <|> paragraphP
 
 -- parses for # heading and converts rest of line to Line
 headingP :: Parser Block
@@ -55,11 +56,11 @@ codeBlockP = CodeBlock <$> between (string "```") (string "```") stringP
 
 -- parses for a horizontal link (---)
 hrP :: Parser Block
-hrP = string "---" *> pure Hr
+hrP = string "---" $> Hr
 
 -- parses for an empty line
 brP :: Parser Block -- ???
-brP = undefined -- Br <$> string "---"
+brP = string "\n" $> Br -- Br <$> string "---"
 
 -- parses a line of text to handle style (bold, italics, inline code, etc)
 lineP :: Parser S.Line

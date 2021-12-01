@@ -1,11 +1,11 @@
 module HUnitTests where
 
-import Test.HUnit
+import Data.Char (isSpace)
 import MarkdownParser
 import SampleText
-import Data.Char (isSpace)
 import Syntax (Block (..), Doc (Doc), Line (..), Text (..), reservedMarkdownChars)
 import qualified Syntax as S
+import Test.HUnit
 import Text.Parsec.Token
 import Text.ParserCombinators.Parsec
 
@@ -76,18 +76,24 @@ test_brPHrP =
     ~: TestList
       [ p hrP "--" ~?= Left "No parses",
         p hrP "---" ~?= Right Hr,
-        p hrP "--------" ~?= Right Hr
+        p hrP "--------" ~?= Right Hr,
+        p brP "\n" ~?= Right Br,
+        p brP "" ~?= Left "No parses",
+        p brP " " ~?= Left "No parses"
       ]
 
 test_table =
   "table"
     ~: TestList
-      [ 
-      ]
+      []
 
 test_block =
   "parsing block"
     ~: TestList
-      []
+      [p blockP "# Heading 1 `code` \n `code`" ~?= Right (Heading 1 (S.Line [Normal "Heading 1 ", InlineCode "code"]))]
 
-test_all = runTestTT $ TestList [test_headingP, test_codeBlockP, test_ulListP, test_olListP, test_blockQuote]
+test_all = runTestTT $ 
+  TestList 
+    [ test_headingP, 
+      test_codeBlockP,
+      test_ulListP, test_olListP, test_blockQuote, test_brPHrP, test_table, test_block]
