@@ -57,9 +57,9 @@ test_blockQuote =
   "block quote"
     ~: TestList
       [ p quoteP "``` ``" ~?= Left "No parses",
-        p quoteP ">hello" ~?= Right (BlockQuote [S.Line [Normal "hello"]]),
-        p quoteP ">1\n>2" ~?= Right (BlockQuote [S.Line [Normal "1"], S.Line [Normal "2"]]),
-        p quoteP ">1\n>2\n> 3" ~?= Right (BlockQuote [S.Line [Normal "1"], S.Line [Normal "2"], S.Line [Normal "3"]])
+        p quoteP ">hello\n" ~?= Right (BlockQuote [S.Line [Normal "hello"]]),
+        p quoteP ">1\n>2\n" ~?= Right (BlockQuote [S.Line [Normal "1"], S.Line [Normal "2"]]),
+        p quoteP ">1\n>2\n> 3\n" ~?= Right (BlockQuote [S.Line [Normal "1"], S.Line [Normal "2"], S.Line [Normal "3"]])
       ]
 
 -- TODO: test for inline code block (```code```)

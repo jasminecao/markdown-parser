@@ -9,10 +9,10 @@ import Text.Parsec.Token
 import Text.ParserCombinators.Parsec as Parsec
 
 -- for testing......
--- p :: Parser a -> String -> Either String a
--- p parser str = case parse parser "" str of
---   Left err -> Left "No parses"
---   Right x -> Right x
+p2 :: Parser a -> String -> Either String a
+p2 parser str = case parse parser "" str of
+  Left err -> Left "No parses"
+  Right x -> Right x
 
 -- | Parses the complete file or text into a Doc type.
 -- TODO: add error filepath arg to parse
@@ -50,7 +50,13 @@ linkP = undefined -- (Link <$> brackets stringP) <$> parens lineP
 
 -- parses for a quote block (> quote)
 quoteP :: Parser Block
-quoteP = BlockQuote <$> many1 (string ">" *> lineP)
+quoteP = BlockQuote <$> many1 quoteNewLinesP
+
+-- where
+quoteNewLinesP :: Parser S.Line
+quoteNewLinesP = do
+  wsP $ char '>'
+  S.Line . (: []) <$> (Normal <$> many (noneOf "\n")) <* newLineP
 
 -- parses for a paragraph
 paragraphP :: Parser Block
@@ -63,11 +69,10 @@ codeBlockP = CodeBlock <$> codeNewLinesP
     codeNewLinesP :: Parser [S.Line]
     codeNewLinesP = do
       string "```\n"
-      manyTill newLineP (try (string "```"))
-
--- parses a string until a newline character
-newLineP :: Parser S.Line
-newLineP = S.Line . (: []) <$> (Normal <$> many (noneOf "\n")) <* string "\n"
+      manyTill codeNewLineP (try (string "```"))
+    -- parses a string until a newline character
+    codeNewLineP :: Parser S.Line
+    codeNewLineP = S.Line . (: []) <$> (Normal <$> many (noneOf "\n")) <* newLineP
 
 -- parses for a horizontal link (---)
 hrP :: Parser Block
@@ -75,7 +80,7 @@ hrP = string "---" $> Hr
 
 -- parses for an empty line
 brP :: Parser Block -- ???
-brP = string "\n" $> Br -- Br <$> string "---"
+brP = newLineP $> Br -- Br <$> string "---"
 
 -- parses a line of text to handle style (bold, italics, inline code, etc)
 lineP :: Parser S.Line
@@ -117,6 +122,10 @@ stringP = many1 (satisfy notReservedChar)
 -- removes trailing whitespace
 wsP :: Parser a -> Parser a
 wsP p = p <* many (satisfy isSpace)
+
+-- parser to consume \n character
+newLineP :: Parser String
+newLineP = string "\n"
 
 -- parses for an integer
 int :: Parser Int
