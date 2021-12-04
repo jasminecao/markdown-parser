@@ -29,8 +29,8 @@ test_ulListP =
     ~: TestList
       [ p ulListP "-1\n" ~?= Left "No parses",
         p ulListP "- item 1\n" ~?= Right (UnorderedList [S.Line [Normal "item 1"]]),
-        p ulListP "- item 1\n- item 2" ~?= Right (UnorderedList [S.Line [Normal "item 1"], S.Line [Normal "item 2"]]),
-        p ulListP "- item 1\n-item 2" ~?= Right (UnorderedList [S.Line [Normal "item 1\n-item 2"]])
+        p ulListP "- item 1\n- item 2\n" ~?= Right (UnorderedList [S.Line [Normal "item 1"], S.Line [Normal "item 2"]]),
+        p ulListP "- item 1\n-item 2\n" ~?= Right (UnorderedList [S.Line [Normal "item 1"], S.Line [Normal "item 2"]])
       ]
 
 test_olListP =
