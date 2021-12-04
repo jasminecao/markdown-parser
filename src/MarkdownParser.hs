@@ -101,7 +101,7 @@ lineP = S.Line <$> many textP
 
 -- parses for a text string
 textP :: Parser Text
-textP = boldP <|> italicP <|> strikeP <|> inlineCodeP <|> normalP
+textP = try italicP <|> try boldP <|> try strikeP <|> try inlineCodeP <|> try normalP
 
 -- parses for a bold string (**text**)
 -- TODO: also add underscore parsing __text__
