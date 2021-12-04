@@ -1,4 +1,4 @@
-module PrettyPrinter where
+module MarkdownPrettyPrinter where
 
 import Syntax (Block (..), Doc (Doc), Line, Text (..))
 import qualified Syntax as S
@@ -25,7 +25,7 @@ instance PP S.Block where
   pp (S.Link str l) = PP.parens $ PP.text str <> PP.brackets (pp l)
   -- TODO: handle multiple lines in blockquote
   pp (S.BlockQuote ls) = undefined
-  pp (S.CodeBlock str) =  undefined -- PP.text "```" <> PP.space <> PP.text str <> PP.text "```"
+  pp (S.CodeBlock str) = undefined -- PP.text "```" <> PP.space <> PP.text str <> PP.text "```"
   pp S.Hr = PP.text "---"
   pp S.Br = PP.text "\n"
   pp (S.Table ls) = undefined

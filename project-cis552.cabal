@@ -26,10 +26,11 @@ source-repository head
 library
   exposed-modules:
       HTMLParser
+      HTMLPrettyPrinter
       HUnitTests
       Lib
       MarkdownParser
-      PrettyPrinter
+      MarkdownPrettyPrinter
       SampleText
       Syntax
   other-modules:

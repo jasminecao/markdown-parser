@@ -10,7 +10,7 @@ newtype Doc = Doc [Block]
 data Block
   = Heading Int Line
   | Paragraph Line -- p
-  | OrderedList (Int, [Line]) -- items, start value
+  | OrderedList (Int, [Line]) -- start value, items
   | UnorderedList [Line]
   | Link String Line -- a
   | BlockQuote [Line]

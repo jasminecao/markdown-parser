@@ -3,7 +3,7 @@ module QCTests where
 import qualified Control.Monad as Monad
 import Data.Char (isSpace)
 import MarkdownParser
-import PrettyPrinter
+import MarkdownPrettyPrinter
 import Syntax (Block (..), Doc (Doc), Line, TableType (..), Text (..), reservedMarkdownChars)
 import qualified Syntax as S
 import Test.HUnit
