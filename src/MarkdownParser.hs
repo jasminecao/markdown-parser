@@ -35,6 +35,7 @@ headingP = do
   Heading (length hx) <$> lineP
 
 -- TODO: figure out how to implement sublists?
+-- TODO: parse for `*` too
 -- parses for an unordered list (- list item)
 ulListP :: Parser Block
 ulListP =
@@ -50,12 +51,15 @@ ulListP =
 -- parses for an ordered list (1. list item)
 olListP :: Parser Block
 olListP =
-  OrderedList
-    <$> many
-      ( do
-          int *> wsP (string ". ")
-          eolP
-      )
+  OrderedList <$> do
+    startVal <- int
+    wsP (string ". ")
+    firstItem <- eolP
+    remainingItems <- many $
+      do
+        int <* wsP (string ".")
+        eolP
+    return (startVal, firstItem : remainingItems)
 
 -- parses for a link ([text](link))
 linkP :: Parser Block
@@ -146,4 +150,4 @@ newLineCharP = string "\n"
 
 -- parses for an integer
 int :: Parser Int
-int = read <$> ((++) <$> string "-" <*> many1 digit <|> many1 digit)
+int = read <$> many1 digit

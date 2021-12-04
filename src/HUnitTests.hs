@@ -43,7 +43,6 @@ test_inlineCodeP =
   "inline code"
     ~: TestList
       [ p inlineCodeP "`regular code`" ~?= Right (InlineCode "regular code"),
-        p inlineCodeP "```code```" ~?= Right (InlineCode "code"),
         p inlineCodeP "`not code" ~?= Left "No parses"
       ]
 
@@ -75,7 +74,8 @@ test_lineP =
         p lineP "~~strike~~ `code` *line\n"
           ~?= Right (S.Line [Strikethrough "strike", Normal " ", InlineCode "code", Normal " ", Normal "*line"]),
         p lineP "`code` **line\nend"
-          ~?= Right (S.Line [InlineCode "code", Normal " ", Normal "**line"])
+          ~?= Right (S.Line [InlineCode "code", Normal " ", Normal "**line"]),
+        p lineP "``\n" ~?= Right (S.Line [Normal "``"])
       ]
 
 test_headingP =
@@ -102,11 +102,11 @@ test_olListP =
   "ordered list"
     ~: TestList
       [ p olListP "1.1" ~?= Left "No parses",
-        p olListP "1. item 1\n" ~?= Right (OrderedList [S.Line [Normal "item 1"]]),
-        p olListP "1. item 1\n2. item 2\n" ~?= Right (OrderedList [S.Line [Normal "item 1"], S.Line [Normal "item 2"]]),
-        p olListP "11. item 1\n2. item 2\n" ~?= Right (OrderedList [S.Line [Normal "item 1"], S.Line [Normal "item 2"]]),
+        p olListP "1. item 1\n" ~?= Right (OrderedList (1, [S.Line [Normal "item 1"]])),
+        p olListP "1. item 1\n2. item 2\n" ~?= Right (OrderedList (1, [S.Line [Normal "item 1"], S.Line [Normal "item 2"]])),
+        p olListP "11. item 1\n2. item 2\n" ~?= Right (OrderedList (11, [S.Line [Normal "item 1"], S.Line [Normal "item 2"]])),
         -- TODO: figure out why this doesn't pass with no space between \n and 2
-        p olListP "1. item 1\n 2.item 2\n" ~?= Right (OrderedList [S.Line [Normal "item 1"]])
+        p olListP "1. item 1\n2.item 2\n" ~?= Right (OrderedList (1, [S.Line [Normal "item 1"]]))
       ]
 
 test_linkP =
@@ -120,7 +120,7 @@ test_linkP =
         p linkP "[google]()" ~?= Right (Link "" (Line [Normal "google.com"]))
       ]
 
-test_blockQuote =
+test_blockQuoteP =
   "block quote"
     ~: TestList
       [ p quoteP "``` ``" ~?= Left "No parses",
@@ -129,7 +129,7 @@ test_blockQuote =
         p quoteP ">1\n>2\n> 3\n" ~?= Right (BlockQuote [S.Line [Normal "1"], S.Line [Normal "2"], S.Line [Normal "3"]])
       ]
 
-test_paragraph =
+test_paragraphP =
   "paragraph"
     ~: TestList
       [ p paragraphP "regular string\n"
@@ -166,17 +166,22 @@ test_brPHrP =
         p brP " " ~?= Left "No parses"
       ]
 
-test_table =
+test_tableP =
   "table"
     ~: TestList
       []
 
-test_block =
+test_blockP =
   "parsing block"
     ~: TestList
       [ p blockP "# Heading 1 `code`\n `code`"
           ~?= Right (Heading 1 (S.Line [Normal "Heading 1 ", InlineCode "code"]))
       ]
+
+test_markdownP =
+  "markdown doc"
+    ~: TestList
+      []
 
 test_all =
   runTestTT $
@@ -190,11 +195,12 @@ test_all =
         test_lineP,
         test_headingP,
         test_codeBlockP,
-        test_paragraph,
+        test_paragraphP,
         test_ulListP,
         test_olListP,
-        test_blockQuote,
+        test_blockQuoteP,
         test_brPHrP,
-        test_table,
-        test_block
+        test_tableP,
+        test_blockP,
+        test_markdownP
       ]

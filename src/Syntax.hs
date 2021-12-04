@@ -10,7 +10,7 @@ newtype Doc = Doc [Block]
 data Block
   = Heading Int Line
   | Paragraph Line -- p
-  | OrderedList [Line]
+  | OrderedList (Int, [Line]) -- items, start value
   | UnorderedList [Line]
   | Link String Line -- a
   | BlockQuote [Line]
@@ -46,6 +46,7 @@ data Text
   | Normal String
   deriving (Eq, Show)
 
+-- TODO: delete this? or replace markdown parser code with this
 -- Reserved Markdown characters which should not be parsed.
 reservedMarkdownChars :: [Char] =
   [ '*',
