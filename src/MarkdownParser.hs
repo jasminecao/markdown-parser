@@ -8,6 +8,12 @@ import qualified Syntax as S
 import Text.Parsec.Token
 import Text.ParserCombinators.Parsec as Parsec
 
+-- for testing......
+-- p :: Parser a -> String -> Either String a
+-- p parser str = case parse parser "" str of
+--   Left err -> Left "No parses"
+--   Right x -> Right x
+
 -- | Parses the complete file or text into a Doc type.
 -- TODO: add error filepath arg to parse
 parseMarkdown :: String -> Either ParseError Doc
@@ -44,15 +50,24 @@ linkP = undefined -- (Link <$> brackets stringP) <$> parens lineP
 
 -- parses for a quote block (> quote)
 quoteP :: Parser Block
-quoteP = BlockQuote <$> (concat <$> many1 (string ">" *> stringP))
+quoteP = BlockQuote <$> many1 (string ">" *> lineP)
 
 -- parses for a paragraph
 paragraphP :: Parser Block
 paragraphP = Paragraph <$> lineP
 
--- parses for a code block (```code```)
+-- parses for a code block (```\n code \n```)
 codeBlockP :: Parser Block
-codeBlockP = CodeBlock <$> between (string "```") (string "```") stringP
+codeBlockP = CodeBlock <$> codeNewLinesP
+  where
+    codeNewLinesP :: Parser [S.Line]
+    codeNewLinesP = do
+      string "```\n"
+      manyTill newLineP (try (string "```"))
+
+-- parses a string until a newline character
+newLineP :: Parser S.Line
+newLineP = S.Line . (: []) <$> (Normal <$> many (noneOf "\n")) <* string "\n"
 
 -- parses for a horizontal link (---)
 hrP :: Parser Block
@@ -93,6 +108,7 @@ normalP :: Parser Text
 normalP = Normal <$> stringP
 
 -- parses for a string until a reserved character is found
+-- TODO: refactor with `noneof`
 stringP :: Parser String
 stringP = many1 (satisfy notReservedChar)
   where

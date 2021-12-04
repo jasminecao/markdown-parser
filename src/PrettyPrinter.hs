@@ -24,8 +24,8 @@ instance PP S.Block where
   pp (S.UnorderedList ls) = undefined
   pp (S.Link str l) = PP.parens $ PP.text str <> PP.brackets (pp l)
   -- TODO: handle multiple lines in blockquote
-  pp (S.BlockQuote str) = PP.text ">" <> PP.space <> PP.text str
-  pp (S.CodeBlock str) = PP.text "```" <> PP.space <> PP.text str <> PP.text "```"
+  pp (S.BlockQuote ls) = undefined
+  pp (S.CodeBlock str) =  undefined -- PP.text "```" <> PP.space <> PP.text str <> PP.text "```"
   pp S.Hr = PP.text "---"
   pp S.Br = PP.text "\n"
   pp (S.Table ls) = undefined

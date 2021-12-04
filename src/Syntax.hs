@@ -13,8 +13,8 @@ data Block
   | OrderedList [Line]
   | UnorderedList [Line]
   | Link String Line -- a
-  | BlockQuote String
-  | CodeBlock String
+  | BlockQuote [Line]
+  | CodeBlock [Line]
   | Hr -- empty
   | Br -- empty
   | Table TableType

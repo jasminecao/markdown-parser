@@ -2,7 +2,7 @@ module HUnitTests where
 
 import Data.Char (isSpace)
 import MarkdownParser
-import SampleText
+-- import SampleText
 import Syntax (Block (..), Doc (Doc), Line (..), Text (..), reservedMarkdownChars)
 import qualified Syntax as S
 import Test.HUnit
@@ -17,18 +17,18 @@ p parser str = case parse parser "" str of
 test_headingP =
   "heading"
     ~: TestList
-      [ p headingP "# Heading 1" ~?= Right (Heading 1 (S.Line [Normal "Heading 1"])),
-        p headingP "#### Heading 4" ~?= Right (Heading 4 (S.Line [Normal "Heading 4"])),
-        p headingP "####### Heading 7" ~?= Left "No parses",
-        p headingP "Heading 1" ~?= Left "No parses",
-        p headingP "## # Heading 2" ~?= Right (Heading 2 (S.Line [Normal "# Heading 2"]))
+      [ p headingP "# Heading 1\n" ~?= Right (Heading 1 (S.Line [Normal "Heading 1"])),
+        p headingP "#### Heading 4\n" ~?= Right (Heading 4 (S.Line [Normal "Heading 4"])),
+        p headingP "####### Heading 7\n" ~?= Left "No parses",
+        p headingP "Heading 1\n" ~?= Left "No parses",
+        p headingP "## # Heading 2\n" ~?= Right (Heading 2 (S.Line [Normal "# Heading 2"]))
       ]
 
 test_ulListP =
   "unordered list"
     ~: TestList
-      [ p ulListP "-1" ~?= Left "No parses",
-        p ulListP "- item 1" ~?= Right (UnorderedList [S.Line [Normal "item 1"]]),
+      [ p ulListP "-1\n" ~?= Left "No parses",
+        p ulListP "- item 1\n" ~?= Right (UnorderedList [S.Line [Normal "item 1"]]),
         p ulListP "- item 1\n- item 2" ~?= Right (UnorderedList [S.Line [Normal "item 1"], S.Line [Normal "item 2"]]),
         p ulListP "- item 1\n-item 2" ~?= Right (UnorderedList [S.Line [Normal "item 1\n-item 2"]])
       ]
@@ -57,18 +57,26 @@ test_blockQuote =
   "block quote"
     ~: TestList
       [ p quoteP "``` ``" ~?= Left "No parses",
-        p quoteP ">hello" ~?= Right (BlockQuote "hello"),
-        p quoteP ">1\n>2" ~?= Right (BlockQuote "1\n2"),
-        p quoteP ">1\n>2\n> 3" ~?= Right (BlockQuote "1\n2\n 3")
+        p quoteP ">hello" ~?= Right (BlockQuote [S.Line [Normal "hello"]]),
+        p quoteP ">1\n>2" ~?= Right (BlockQuote [S.Line [Normal "1"], S.Line [Normal "2"]]),
+        p quoteP ">1\n>2\n> 3" ~?= Right (BlockQuote [S.Line [Normal "1"], S.Line [Normal "2"], S.Line [Normal "3"]])
       ]
 
+-- TODO: test for inline code block (```code```)
 test_codeBlockP =
   "code block"
     ~: TestList
-      [ p codeBlockP "``` ``" ~?= Left "No parses",
-        p codeBlockP "``````" ~?= Left "No parses",
-        p codeBlockP "```hello!```" ~?= Right (CodeBlock "hello!"),
-        p codeBlockP "```a line\nanother line```" ~?= Right (CodeBlock "a line\nanother line")
+      [ p codeBlockP "``` ``\n" ~?= Left "No parses",
+        p codeBlockP "``````\n" ~?= Left "No parses",
+        p codeBlockP "```\n```\n" ~?= Right (CodeBlock []),
+        p codeBlockP "```\nhello!\n```\n" ~?= Right (CodeBlock [S.Line [Normal "hello!"]]),
+        p codeBlockP "```\na line\nanother line\n```\n"
+          ~?= Right
+            ( CodeBlock
+                [ S.Line [Normal "a line"],
+                  S.Line [Normal "another line"]
+                ]
+            )
       ]
 
 test_brPHrP =
@@ -90,10 +98,19 @@ test_table =
 test_block =
   "parsing block"
     ~: TestList
-      [p blockP "# Heading 1 `code` \n `code`" ~?= Right (Heading 1 (S.Line [Normal "Heading 1 ", InlineCode "code"]))]
+      [ p blockP "# Heading 1 `code`\n `code`"
+          ~?= Right (Heading 1 (S.Line [Normal "Heading 1 ", InlineCode "code"]))
+      ]
 
-test_all = runTestTT $ 
-  TestList 
-    [ test_headingP, 
-      test_codeBlockP,
-      test_ulListP, test_olListP, test_blockQuote, test_brPHrP, test_table, test_block]
+test_all =
+  runTestTT $
+    TestList
+      [ test_headingP,
+        test_codeBlockP,
+        test_ulListP,
+        test_olListP,
+        test_blockQuote,
+        test_brPHrP,
+        test_table,
+        test_block
+      ]
