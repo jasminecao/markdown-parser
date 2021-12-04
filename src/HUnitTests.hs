@@ -29,6 +29,7 @@ test_ulListP =
     ~: TestList
       [ p ulListP "-1\n" ~?= Left "No parses",
         p ulListP "- item 1\n" ~?= Right (UnorderedList [S.Line [Normal "item 1"]]),
+        p ulListP "- item 1\ndontparsethis" ~?= Right (UnorderedList [S.Line [Normal "item 1"]]),
         p ulListP "- item 1\n- item 2\n" ~?= Right (UnorderedList [S.Line [Normal "item 1"], S.Line [Normal "item 2"]]),
         p ulListP "- item 1\n-item 2\n" ~?= Right (UnorderedList [S.Line [Normal "item 1"], S.Line [Normal "item 2"]])
       ]
@@ -37,9 +38,11 @@ test_olListP =
   "ordered list"
     ~: TestList
       [ p olListP "1.1" ~?= Left "No parses",
-        p olListP "1. item 1" ~?= Right (OrderedList [S.Line [Normal "item 1"]]),
-        p olListP "1. item 1\n2. item 2" ~?= Right (OrderedList [S.Line [Normal "item 1"], S.Line [Normal "item 2"]]),
-        p olListP "1. item 1\n2.item 2" ~?= Right (OrderedList [S.Line [Normal "item 1\n2.item 2"]])
+        p olListP "1. item 1\n" ~?= Right (OrderedList [S.Line [Normal "item 1"]]),
+        p olListP "1. item 1\n2. item 2\n" ~?= Right (OrderedList [S.Line [Normal "item 1"], S.Line [Normal "item 2"]]),
+        p olListP "11. item 1\n2. item 2\n" ~?= Right (OrderedList [S.Line [Normal "item 1"], S.Line [Normal "item 2"]]),
+        -- TODO: figure out why this doesn't pass (but it does with a space)
+        p olListP "1. item 1\n2.item 2\n" ~?= Right (OrderedList [S.Line [Normal "item 1\n2.item 2"]])
       ]
 
 test_linkP =

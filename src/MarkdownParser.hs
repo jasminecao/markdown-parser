@@ -34,6 +34,7 @@ headingP = do
   Monad.guard (length hx < 7)
   Heading (length hx) <$> lineP
 
+-- TODO: figure out how to implement sublists?
 -- parses for an unordered list (- list item)
 ulListP :: Parser Block
 ulListP =
@@ -48,7 +49,13 @@ ulListP =
 
 -- parses for an ordered list (1. list item)
 olListP :: Parser Block
-olListP = OrderedList <$> many (int *> char '.' *> many1 space *> lineP)
+olListP =
+  OrderedList
+    <$> many
+      ( do
+          int *> wsP (string ". ")
+          eolP
+      )
 
 -- parses for a link ([text](link))
 linkP :: Parser Block
