@@ -101,7 +101,12 @@ lineP = S.Line <$> many textP
 
 -- parses for a text string
 textP :: Parser Text
-textP = try italicP <|> try boldP <|> try strikeP <|> try inlineCodeP <|> try normalP
+textP =
+  try italicP
+    <|> try boldP
+    <|> try strikeP
+    <|> try inlineCodeP
+    <|> try normalP
 
 -- parses for a bold string (**text**)
 -- TODO: also add underscore parsing __text__
@@ -123,14 +128,13 @@ inlineCodeP = InlineCode <$> between (char '`') (char '`') stringP
 
 -- parses for a normal, undecorated string
 normalP :: Parser Text
-normalP = Normal <$> stringP
+normalP =
+  try (Normal <$> stringP)
+    <|> Normal <$> many1 (noneOf "\n")
 
 -- parses for a string until a reserved character is found
--- TODO: refactor with `noneof`
 stringP :: Parser String
-stringP = many1 (satisfy notReservedChar)
-  where
-    notReservedChar c = c `notElem` reservedMarkdownChars
+stringP = many1 $ noneOf ['*', '~', '`', '>', '\n']
 
 -- removes trailing whitespace
 wsP :: Parser a -> Parser a

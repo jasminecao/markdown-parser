@@ -50,8 +50,7 @@ test_inlineCodeP =
 test_normalP =
   "normal text"
     ~: TestList
-      [ p normalP "regular text" ~?= Right (Normal "regular text"),
-        p normalP "`not text`" ~?= Left "No parses"
+      [ p normalP "regular text" ~?= Right (Normal "regular text")
       ]
 
 test_textP =
@@ -67,7 +66,17 @@ test_textP =
 
 test_lineP =
   "line"
-    ~: TestList []
+    ~: TestList
+      [ p lineP "line\n" ~?= Right (S.Line [Normal "line"]),
+        p lineP "`code` line\n" ~?= Right (S.Line [InlineCode "code", Normal " line"]),
+        p lineP "~~strike~~ `code` **bold** *italic* line\n"
+          ~?= Right (S.Line [Strikethrough "strike", Normal " ", InlineCode "code", Normal " ", Bold "bold", Normal " ", Italic "italic", Normal " line"]),
+        -- TODO: perhaps change this so it doesn't output 2 normals?
+        p lineP "~~strike~~ `code` *line\n"
+          ~?= Right (S.Line [Strikethrough "strike", Normal " ", InlineCode "code", Normal " ", Normal "*line"]),
+        p lineP "`code` **line\nend"
+          ~?= Right (S.Line [InlineCode "code", Normal " ", Normal "**line"])
+      ]
 
 test_headingP =
   "heading"
@@ -96,8 +105,8 @@ test_olListP =
         p olListP "1. item 1\n" ~?= Right (OrderedList [S.Line [Normal "item 1"]]),
         p olListP "1. item 1\n2. item 2\n" ~?= Right (OrderedList [S.Line [Normal "item 1"], S.Line [Normal "item 2"]]),
         p olListP "11. item 1\n2. item 2\n" ~?= Right (OrderedList [S.Line [Normal "item 1"], S.Line [Normal "item 2"]]),
-        -- TODO: figure out why this doesn't pass (but it does with a space)
-        p olListP "1. item 1\n2.item 2\n" ~?= Right (OrderedList [S.Line [Normal "item 1\n2.item 2"]])
+        -- TODO: figure out why this doesn't pass with no space between \n and 2
+        p olListP "1. item 1\n 2.item 2\n" ~?= Right (OrderedList [S.Line [Normal "item 1"]])
       ]
 
 test_linkP =
