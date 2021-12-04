@@ -17,11 +17,12 @@ instance PP S.Doc where
 instance PP S.Block where
   pp (S.Heading n l) = tag ("h" ++ show n) (pp l)
   pp (S.Paragraph l) = tag "p" (pp l)
-  pp (S.OrderedList (startVal, ls)) = undefined
-  pp (S.UnorderedList ls) = undefined
-  pp (S.Link str l) = undefined
+  pp (S.OrderedList (startVal, ls)) = 
+    tagWithAttrs "ol" [("start", show startVal)] (PP.cat $ map (tag "li" . pp) ls)
+  pp (S.UnorderedList ls) = tag "ul" (PP.cat $ map (tag "li" . pp) ls)
+  pp (S.Link href l) = tagWithAttrs "a" [("href", href)] (pp l)
   -- TODO: handle multiple lines in blockquote
-  pp (S.BlockQuote ls) = tag "blockquote" (PP.cat $ map pp ls)
+  pp (S.BlockQuote ls) = tag "blockquote" (PP.cat $ map (tag "p" . pp) ls)
   pp (S.CodeBlock str) = tag "pre" $ tag "code" (PP.cat $ map pp str)
   pp S.Hr = PP.text "<hr>"
   pp S.Br = PP.text "<br>"
@@ -38,11 +39,19 @@ instance PP S.Text where
   pp (S.Normal s) = PP.text s -- TODO: maybe <span>?
 
 tag :: String -> PP.Doc -> PP.Doc
-tag t context = 
-  PP.text "<" <> PP.text t <> PP.text ">" <> context <> PP.text "</" <> PP.text t <> PP.text ">"
+tag t = tagWithAttrs t []
+  -- PP.text "<" <> PP.text t <> PP.text ">" <> context <> PP.text "</" <> PP.text t <> PP.text ">"
 
--- tagWithAttr :: String -> [(String, String)] PP.Doc -> PP.Doc
--- tagWithAttr t attr context = PP.
---   where
---     tagWithAttrInner t [] context = context <> PP.text "</" <> PP.text t <> PP.text ">"
---     tagWithAttrInner t ((attrName, attrVal):tl) context = 
+tagWithAttrs :: String -> [(String, String)] -> PP.Doc -> PP.Doc
+tagWithAttrs t attrs context = 
+  PP.text "<" <> PP.text t
+    <> tagWithAttrInner t attrs context
+  where
+    tagWithAttrInner t [] context = 
+      PP.text ">" <> 
+      context <> 
+      PP.text "</" <> PP.text t <> PP.text ">"
+    tagWithAttrInner t ((attrName, attrVal):tl) context = -- attrName = attrVal
+      PP.text " " <>
+      PP.text attrName <> PP.text "=\"" <> PP.text attrVal <> PP.text "\"" <> 
+      tagWithAttrInner t tl context
