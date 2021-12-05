@@ -9,7 +9,7 @@ import Text.ParserCombinators.Parsec as Parsec
 
 testFile :: IO ()
 testFile = do
-  s <- readFile "/Users/jasmine/Documents/fall-2021/cis552/project_t11-project/somefile.txt"
+  s <- readFile "/Users/jasmine/Documents/fall-2021/cis552/project_t11-project/somefile.md"
   case parseMarkdown s of
     Left error -> print error
     Right doc -> writeFile "/Users/jasmine/Documents/fall-2021/cis552/project_t11-project/somefile.html" (pretty doc)
