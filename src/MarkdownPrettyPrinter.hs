@@ -32,7 +32,7 @@ instance PP S.Block where
   pp (S.Table ls) = undefined
 
 instance PP S.Line where
-  pp (S.Line ts) = PP.vcat $ map pp ts
+  pp (S.Line ts) = PP.hcat $ map pp ts
 
 instance PP S.Text where
   pp (S.Bold s) = PP.text "**" <> PP.text s <> PP.text "**"
