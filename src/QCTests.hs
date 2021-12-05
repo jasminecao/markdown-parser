@@ -8,18 +8,27 @@ import Syntax (Block (..), Doc (Doc), Line, TableType (..), Text (..), reservedM
 import qualified Syntax as S
 import Test.HUnit
 import Test.QuickCheck (Arbitrary, Gen, arbitrary, choose, oneof, shrink)
+import qualified Test.QuickCheck as QC
 import Text.Parsec.Token
 import Text.ParserCombinators.Parsec as Parsec
 
 instance Arbitrary Text where
   arbitrary =
     oneof
-      [ Bold <$> arbitrary,
-        Italic <$> arbitrary,
-        Strikethrough <$> arbitrary,
-        InlineCode <$> arbitrary,
-        Normal <$> arbitrary
+      [ Bold <$> genSafeString,
+        Italic <$> genSafeString,
+        Strikethrough <$> genSafeString,
+        InlineCode <$> genSafeString,
+        Normal <$> genSafeString
       ]
+    where
+      genSafeString :: Gen String
+      genSafeString =
+        QC.listOf1 (QC.elements (['a' .. 'z'] ++ ['A' .. 'Z'] ++ ['0' .. '9'] ++ [' ']))
+
+  -- ( (arbitrary :: Gen Char)
+  --     `QC.suchThat` (`notElem` reservedMarkdownChars)
+  -- )
 
   shrink (Bold str) = Bold <$> shrink str
   shrink (Italic str) = Italic <$> shrink str
@@ -28,7 +37,17 @@ instance Arbitrary Text where
   shrink (Normal str) = Normal <$> shrink str
 
 instance Arbitrary S.Line where
-  arbitrary = S.Line <$> arbitrary
+  arbitrary = S.Line <$> genArbitraryLine
+    where
+      genArbitraryLine :: Gen [Text]
+      genArbitraryLine =
+        (arbitrary :: Gen [Text])
+          `QC.suchThat` noConsecutiveNormal
+
+      noConsecutiveNormal :: [Text] -> Bool
+      noConsecutiveNormal [] = True
+      noConsecutiveNormal (Normal _ : Normal _ : _) = False
+      noConsecutiveNormal (_ : rest) = noConsecutiveNormal rest
 
   shrink (S.Line (x : xs)) = [S.Line xs]
   shrink _ = []

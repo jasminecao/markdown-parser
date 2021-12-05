@@ -31,6 +31,7 @@ library
       Lib
       MarkdownParser
       MarkdownPrettyPrinter
+      QCTests
       SampleText
       Syntax
   other-modules:
@@ -105,7 +106,6 @@ test-suite project-cis552-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      QCTests
       Paths_project_cis552
   hs-source-dirs:
       test
