@@ -112,12 +112,23 @@ test_olListP =
 test_linkP =
   "link"
     ~: TestList
-      [ p linkP "[()]" ~?= Left "No parses",
-        p linkP "[google](google.com" ~?= Left "No parses",
-        p linkP "[google]\n(google.com)" ~?= Left "No parses",
-        p linkP "[google](google.com)" ~?= Right (Link "google.com" (Line [Normal "google"])),
-        p linkP "[](google.com)" ~?= Right (Link "google.com" (Line [Normal ""])),
-        p linkP "[google]()" ~?= Right (Link "" (Line [Normal "google.com"]))
+      [ p linkP "[()]\n" ~?= Left "No parses",
+        p linkP "[google](google.com\n" ~?= Left "No parses",
+        p linkP "[google]\n(google.com)\n" ~?= Left "No parses",
+        p linkP "[google](google.com)\n" ~?= Right (Link "google.com" (Line [Normal "google"])),
+        p linkP "[](google.com)\n" ~?= Right (Link "google.com" (Line [Normal ""])),
+        p linkP "[google]()\n" ~?= Right (Link "" (Line [Normal "google.com"]))
+      ]
+
+test_imgP =
+  "link"
+    ~: TestList
+      [ p imgP "[google](google.com)\n" ~?= Left "No parses",
+        p imgP "![google]\n(google.com)\n" ~?= Left "No parses",
+        p imgP "![img](image.png)\n" ~?= Right (Image "img" "image.png" ""),
+        p imgP "![img](image.png \"Title\")\n" ~?= Right (Image "img" "image.png" "Title"),
+        p imgP "![img](image.png \"A title\")\n" ~?= Right (Image "img" "image.png" "A title"),
+        p imgP "![](image.png \"noalt\")\n" ~?= Right (Image "" "image.png" "noalt")
       ]
 
 test_blockQuoteP =

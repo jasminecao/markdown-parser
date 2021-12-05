@@ -23,9 +23,10 @@ instance PP S.Block where
   pp (S.OrderedList ls) = undefined
   pp (S.UnorderedList ls) = undefined
   pp (S.Link str l) = PP.parens $ PP.text str <> PP.brackets (pp l)
+  pp (S.Image alt src title) = undefined
   -- TODO: handle multiple lines in blockquote
-  pp (S.BlockQuote ls) = undefined
-  pp (S.CodeBlock str) = undefined -- PP.text "```" <> PP.space <> PP.text str <> PP.text "```"
+  pp (S.BlockQuote ls) = undefined -- PP.cat $ map (PP.text ">" <> pp) ls
+  pp (S.CodeBlock ls) = undefined --PP.text "```\n" <> PP.space <> PP.text str <> PP.text "\n```"
   pp S.Hr = PP.text "---"
   pp S.Br = PP.text "\n"
   pp (S.Table ls) = undefined

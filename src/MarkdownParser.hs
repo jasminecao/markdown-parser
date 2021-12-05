@@ -63,7 +63,14 @@ olListP =
 
 -- parses for a link ([text](link))
 linkP :: Parser Block
-linkP = undefined -- (Link <$> brackets stringP) <$> parens lineP
+linkP = undefined
+  -- Link <$> 
+  -- between (char '[') (char ']') stringP <*> 
+  -- between (char '(') (char ')') lineP
+
+-- parses for a link ([text](link))
+imgP :: Parser Block
+imgP = undefined
 
 -- parses for a quote block (> quote)
 quoteP :: Parser Block

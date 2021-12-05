@@ -21,6 +21,7 @@ instance PP S.Block where
     tagWithAttrs "ol" [("start", show startVal)] (PP.cat $ map (tag "li" . pp) ls)
   pp (S.UnorderedList ls) = tag "ul" (PP.cat $ map (tag "li" . pp) ls)
   pp (S.Link href l) = tagWithAttrs "a" [("href", href)] (pp l)
+  pp (S.Image alt src title) = undefined
   -- TODO: handle multiple lines in blockquote
   pp (S.BlockQuote ls) = tag "blockquote" (PP.cat $ map (tag "p" . pp) ls)
   pp (S.CodeBlock str) = tag "pre" $ tag "code" (PP.cat $ map pp str)
@@ -40,7 +41,6 @@ instance PP S.Text where
 
 tag :: String -> PP.Doc -> PP.Doc
 tag t = tagWithAttrs t []
-  -- PP.text "<" <> PP.text t <> PP.text ">" <> context <> PP.text "</" <> PP.text t <> PP.text ">"
 
 tagWithAttrs :: String -> [(String, String)] -> PP.Doc -> PP.Doc
 tagWithAttrs t attrs context = 
@@ -52,6 +52,6 @@ tagWithAttrs t attrs context =
       context <> 
       PP.text "</" <> PP.text t <> PP.text ">"
     tagWithAttrInner t ((attrName, attrVal):tl) context = -- attrName = attrVal
-      PP.text " " <>
+      PP.space <>
       PP.text attrName <> PP.text "=\"" <> PP.text attrVal <> PP.text "\"" <> 
       tagWithAttrInner t tl context

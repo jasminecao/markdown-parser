@@ -13,6 +13,7 @@ data Block
   | OrderedList (Int, [Line]) -- start value, items
   | UnorderedList [Line]
   | Link String Line -- a
+  | Image String String String -- alt src title
   | BlockQuote [Line]
   | CodeBlock [Line]
   | Hr -- empty
