@@ -192,8 +192,24 @@ test_blockP =
 test_markdownP =
   "markdown doc"
     ~: TestList
-      [ p markdownP "# Heading 1"
-          ~?= Right (Doc [Heading 1 (S.Line [Normal "Heading 1"])])
+      [ p markdownP "# Heading 1\n"
+          ~?= Right (Doc [Heading 1 (S.Line [Normal "Heading 1"])]),
+        -- TODO: figure out why there are two BRs after codeblock
+        p markdownP sampleText
+          ~?= Right
+            ( Doc
+                [ Heading 1 (Line [Normal "Heading 1"]),
+                  Br,
+                  Paragraph (Line [Normal "This is ", InlineCode "inline code", Normal ". "]),
+                  Br,
+                  Paragraph (Line [Bold "bold", Normal ", ", Italic "italic", Normal ", ", Strikethrough "struckthrough"]),
+                  Br,
+                  CodeBlock [Line [Normal "fold :: (a -> b -> b) -> b -> [a] -> b"], Line [Normal "fold f z [] = z"], Line [Normal "fold f z (x:xs) = f x (fold f z xs)"]],
+                  Br,
+                  Br,
+                  OrderedList (3, [Line [Normal "This is a numbered list."], Line [Normal "This is the second item."], Line [Normal "This is the third item."]])
+                ]
+            )
       ]
 
 test_all =

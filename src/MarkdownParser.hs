@@ -19,8 +19,9 @@ p2 parser str = case parse parser "" str of
 parseMarkdown :: String -> Either ParseError Doc
 parseMarkdown = parse markdownP ""
 
+-- TODO: optionally parse newline chars
 markdownP :: Parser Doc
-markdownP = Doc <$> many1 blockP
+markdownP = Doc <$> many1 (blockP <* string "\n")
 
 -- TODO: add end of line check (\n)
 -- parses for a block of markdown (headings, lists, quotes, code blocks)
@@ -96,7 +97,7 @@ codeBlockP = CodeBlock <$> codeNewLinesP
     codeNewLinesP :: Parser [S.Line]
     codeNewLinesP = do
       string "```\n"
-      manyTill eolP (try (string "```"))
+      manyTill eolP (try (string "```\n"))
 
 -- parses a string until the end of the line (\n char)
 eolP :: Parser S.Line
@@ -108,11 +109,11 @@ hrP = string "---" $> Hr
 
 -- parses for an empty line
 brP :: Parser Block -- ???
-brP = newLineCharP $> Br -- Br <$> string "---"
+brP = string "\n\n" $> Br -- Br <$> string "---"
 
 -- parses a line of text to handle style (bold, italics, inline code, etc)
 lineP :: Parser S.Line
-lineP = S.Line <$> many1 textP
+lineP = S.Line <$> many1 textP <* char '\n'
 
 -- parses for a text string
 textP :: Parser Text
