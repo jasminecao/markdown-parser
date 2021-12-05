@@ -41,7 +41,7 @@ instance Arbitrary S.Line where
     where
       genArbitraryLine :: Gen [Text]
       genArbitraryLine =
-        (arbitrary :: Gen [Text])
+        QC.listOf1 arbitrary
           `QC.suchThat` noConsecutiveNormal
 
       noConsecutiveNormal :: [Text] -> Bool
@@ -49,8 +49,9 @@ instance Arbitrary S.Line where
       noConsecutiveNormal (Normal _ : Normal _ : _) = False
       noConsecutiveNormal (_ : rest) = noConsecutiveNormal rest
 
-  shrink (S.Line (x : xs)) = [S.Line xs]
-  shrink _ = []
+-- shrink (S.Line [x]) = S.Line <$> shrink [x]
+-- shrink (S.Line (x : xs)) = [S.Line xs]
+-- shrink _ = []
 
 instance Arbitrary TableType where
   arbitrary =
