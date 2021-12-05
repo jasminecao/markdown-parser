@@ -64,11 +64,14 @@ olListP =
 -- parses for a link ([text](link))
 linkP :: Parser Block
 linkP = undefined
-  -- Link <$> 
-  -- between (char '[') (char ']') stringP <*> 
-  -- between (char '(') (char ')') lineP
+  -- Link <$> getText <*> pure "abc"
+  -- where
+  --   getText = S.Line <$> brackets textP -- (char '[' *> manyTill textP (try (char ']')))
+  --   -- getLink = char '(' *> manyTill anyChar (try (char ')'))
 
--- parses for a link ([text](link))
+-- getText = S.Line <$> (char '[' *> manyTill textP (try (char ']')))
+
+-- parses for a img (![alt](src "title"))
 imgP :: Parser Block
 imgP = undefined
 

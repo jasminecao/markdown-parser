@@ -22,7 +22,7 @@ instance PP S.Block where
   pp (S.Paragraph l) = pp l
   pp (S.OrderedList ls) = undefined
   pp (S.UnorderedList ls) = undefined
-  pp (S.Link str l) = PP.parens $ PP.text str <> PP.brackets (pp l)
+  pp (S.Link l href) = PP.parens $ PP.text href <> PP.brackets (pp l)
   pp (S.Image alt src title) = undefined
   -- TODO: handle multiple lines in blockquote
   pp (S.BlockQuote ls) = undefined -- PP.cat $ map (PP.text ">" <> pp) ls

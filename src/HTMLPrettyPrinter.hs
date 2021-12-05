@@ -20,7 +20,7 @@ instance PP S.Block where
   pp (S.OrderedList (startVal, ls)) = 
     tagWithAttrs "ol" [("start", show startVal)] (PP.cat $ map (tag "li" . pp) ls)
   pp (S.UnorderedList ls) = tag "ul" (PP.cat $ map (tag "li" . pp) ls)
-  pp (S.Link href l) = tagWithAttrs "a" [("href", href)] (pp l)
+  pp (S.Link l href) = tagWithAttrs "a" [("href", href)] (pp l)
   pp (S.Image alt src title) = undefined
   -- TODO: handle multiple lines in blockquote
   pp (S.BlockQuote ls) = tag "blockquote" (PP.cat $ map (tag "p" . pp) ls)
