@@ -115,7 +115,7 @@ test_linkP =
       [ p linkP "[()]\n" ~?= Left "No parses",
         p linkP "[google](google.com\n" ~?= Left "No parses",
         p linkP "[google]\n(google.com)\n" ~?= Left "No parses",
-        p linkP "[google](google.com)\n" ~?= Right (Link (Line [Normal "google"])  "google.com"),
+        p linkP "[google](google.com)\n" ~?= Right (Link (Line [Normal "google"]) "google.com"),
         p linkP "[](google.com)\n" ~?= Right (Link (Line [Normal ""]) "google.com"),
         p linkP "[google]()\n" ~?= Right (Link (Line [Normal "google.com"]) "")
       ]
@@ -192,7 +192,9 @@ test_blockP =
 test_markdownP =
   "markdown doc"
     ~: TestList
-      []
+      [ p markdownP "# Heading 1"
+          ~?= Right (Doc [Heading 1 (S.Line [Normal "Heading 1"])])
+      ]
 
 test_all =
   runTestTT $

@@ -20,7 +20,7 @@ parseMarkdown :: String -> Either ParseError Doc
 parseMarkdown = parse markdownP ""
 
 markdownP :: Parser Doc
-markdownP = Doc <$> many blockP
+markdownP = Doc <$> many1 blockP
 
 -- TODO: add end of line check (\n)
 -- parses for a block of markdown (headings, lists, quotes, code blocks)
@@ -64,10 +64,11 @@ olListP =
 -- parses for a link ([text](link))
 linkP :: Parser Block
 linkP = undefined
-  -- Link <$> getText <*> pure "abc"
-  -- where
-  --   getText = S.Line <$> brackets textP -- (char '[' *> manyTill textP (try (char ']')))
-  --   -- getLink = char '(' *> manyTill anyChar (try (char ')'))
+
+-- Link <$> getText <*> pure "abc"
+-- where
+--   getText = S.Line <$> brackets textP -- (char '[' *> manyTill textP (try (char ']')))
+--   -- getLink = char '(' *> manyTill anyChar (try (char ')'))
 
 -- getText = S.Line <$> (char '[' *> manyTill textP (try (char ']')))
 
@@ -111,7 +112,7 @@ brP = newLineCharP $> Br -- Br <$> string "---"
 
 -- parses a line of text to handle style (bold, italics, inline code, etc)
 lineP :: Parser S.Line
-lineP = S.Line <$> many textP
+lineP = S.Line <$> many1 textP
 
 -- parses for a text string
 textP :: Parser Text
