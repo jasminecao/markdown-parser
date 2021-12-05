@@ -1,19 +1,18 @@
 module Main where
 
-import qualified System.IO as IO
-import qualified System.IO.Error as IO
-
-import Text.Parsec.Token
-import Text.ParserCombinators.Parsec as Parsec
+import HTMLPrettyPrinter
 import Lib
 import MarkdownParser
-import HTMLPrettyPrinter
+import qualified System.IO as IO
+import qualified System.IO.Error as IO
+import Text.Parsec.Token
+import Text.ParserCombinators.Parsec as Parsec
 
 main :: IO ()
 main = do
   s <- readFile "somefile.txt"
-  case parseMarkdown s of 
-    Left error -> IO.putStrLn error
+  case parseMarkdown s of
+    Left error -> print error
     Right doc -> IO.putStrLn $ pretty doc
   return ()
 
@@ -29,4 +28,3 @@ main = do
 --         pure $ parse parser str)
 --     (\e ->
 --         pure $ Left $ "Error:" ++ show e)
-    
