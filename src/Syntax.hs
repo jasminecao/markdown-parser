@@ -46,13 +46,3 @@ data Text
   | InlineCode String
   | Normal String
   deriving (Eq, Show)
-
--- TODO: delete this? or replace markdown parser code with this
--- Reserved Markdown characters which should not be parsed.
-reservedMarkdownChars :: [Char] =
-  [ '*',
-    '~',
-    '`',
-    '>',
-    '\n'
-  ]

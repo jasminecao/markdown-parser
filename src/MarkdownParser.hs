@@ -3,7 +3,7 @@ module MarkdownParser where
 import qualified Control.Monad as Monad
 import Data.Char (isSpace)
 import Data.Functor
-import Syntax (Block (..), Doc (Doc), Line, Text (..), reservedMarkdownChars)
+import Syntax (Block (..), Doc (Doc), Line, Text (..))
 import qualified Syntax as S
 import Text.Parsec.Token
 import Text.ParserCombinators.Parsec as Parsec
@@ -19,14 +19,22 @@ p2 parser str = case parse parser "" str of
 parseMarkdown :: String -> Either ParseError Doc
 parseMarkdown = parse markdownP ""
 
--- TODO: optionally parse newline chars
 markdownP :: Parser Doc
-markdownP = Doc <$> many1 (blockP <* string "\n")
+markdownP = Doc <$> many1 blockP
 
 -- TODO: add end of line check (\n)
 -- parses for a block of markdown (headings, lists, quotes, code blocks)
 blockP :: Parser Block
-blockP = brP <|> headingP <|> ulListP <|> olListP <|> quoteP <|> codeBlockP <|> paragraphP
+blockP = tryBlockP <* many (string "\n")
+  where
+    tryBlockP =
+      try brP
+        <|> try headingP
+        <|> try ulListP
+        <|> try olListP
+        <|> try quoteP
+        <|> try codeBlockP
+        <|> paragraphP
 
 -- parses for # heading and converts rest of line to Line
 headingP :: Parser Block
@@ -101,7 +109,7 @@ codeBlockP = CodeBlock <$> codeNewLinesP
 
 -- parses a string until the end of the line (\n char)
 eolP :: Parser S.Line
-eolP = S.Line . (: []) <$> (Normal <$> many (noneOf "\n")) <* newLineCharP
+eolP = S.Line . (: []) <$> (Normal <$> many (noneOf "\n")) <* newLineChar
 
 -- parses for a horizontal link (---)
 hrP :: Parser Block
@@ -157,8 +165,8 @@ wsP :: Parser a -> Parser a
 wsP p = p <* many (satisfy isSpace)
 
 -- parser to consume \n character
-newLineCharP :: Parser String
-newLineCharP = string "\n"
+newLineChar :: Parser String
+newLineChar = string "\n"
 
 -- parses for an integer
 int :: Parser Int

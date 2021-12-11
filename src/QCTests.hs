@@ -4,7 +4,7 @@ import qualified Control.Monad as Monad
 import Data.Char (isSpace)
 import MarkdownParser
 import MarkdownPrettyPrinter
-import Syntax (Block (..), Doc (Doc), Line, TableType (..), Text (..), reservedMarkdownChars)
+import Syntax (Block (..), Doc (Doc), Line, TableType (..), Text (..))
 import qualified Syntax as S
 import Test.HUnit
 import Test.QuickCheck (Arbitrary, Gen, arbitrary, choose, oneof, shrink)

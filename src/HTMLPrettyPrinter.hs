@@ -5,7 +5,6 @@ import qualified Syntax as S
 import Text.PrettyPrint hiding (braces, parens, sep, (<>))
 import qualified Text.PrettyPrint as PP
 
--- TODO: refactor to htmlpretty
 htmlPretty :: PP a => a -> String
 htmlPretty = PP.render . pp
 

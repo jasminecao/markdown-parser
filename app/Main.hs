@@ -1,6 +1,6 @@
 module Main where
 
-import HTMLPrettyPrinter
+import HTMLPrettyPrinter (htmlPretty)
 import Lib
 import MarkdownParser
 import qualified System.IO as IO
@@ -13,5 +13,5 @@ main = do
   s <- readFile "somefile.md"
   case parseMarkdown s of
     Left error -> print error
-    Right doc -> IO.putStrLn $ pretty doc
+    Right doc -> IO.putStrLn $ htmlPretty doc
   return ()

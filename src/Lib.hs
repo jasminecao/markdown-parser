@@ -1,6 +1,6 @@
 module Lib where
 
-import HTMLPrettyPrinter (pretty)
+import HTMLPrettyPrinter (htmlPretty)
 import MarkdownParser
 import qualified System.IO as IO
 import qualified System.IO.Error as IO

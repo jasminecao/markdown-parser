@@ -3,7 +3,7 @@ module HUnitTests where
 import Data.Char (isSpace)
 import MarkdownParser
 import SampleText
-import Syntax (Block (..), Doc (Doc), Line (..), Text (..), reservedMarkdownChars)
+import Syntax (Block (..), Doc (Doc), Line (..), Text (..))
 import qualified Syntax as S
 import Test.HUnit (Test (TestList), runTestTT, (~:), (~?=))
 import Text.Parsec.Token
@@ -172,7 +172,7 @@ test_brPHrP =
       [ p hrP "--" ~?= Left "No parses",
         p hrP "---" ~?= Right Hr,
         p hrP "--------" ~?= Right Hr,
-        p brP "\n" ~?= Right Br,
+        p brP "\n\n" ~?= Right Br,
         p brP "" ~?= Left "No parses",
         p brP " " ~?= Left "No parses"
       ]
@@ -194,19 +194,13 @@ test_markdownP =
     ~: TestList
       [ p markdownP "# Heading 1\n"
           ~?= Right (Doc [Heading 1 (S.Line [Normal "Heading 1"])]),
-        -- TODO: figure out why there are two BRs after codeblock
         p markdownP sampleText
           ~?= Right
             ( Doc
                 [ Heading 1 (Line [Normal "Heading 1"]),
-                  Br,
                   Paragraph (Line [Normal "This is ", InlineCode "inline code", Normal ". "]),
-                  Br,
                   Paragraph (Line [Bold "bold", Normal ", ", Italic "italic", Normal ", ", Strikethrough "struckthrough"]),
-                  Br,
                   CodeBlock [Line [Normal "fold :: (a -> b -> b) -> b -> [a] -> b"], Line [Normal "fold f z [] = z"], Line [Normal "fold f z (x:xs) = f x (fold f z xs)"]],
-                  Br,
-                  Br,
                   OrderedList (3, [Line [Normal "This is a numbered list."], Line [Normal "This is the second item."], Line [Normal "This is the third item."]])
                 ]
             )
