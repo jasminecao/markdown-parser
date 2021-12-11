@@ -71,15 +71,14 @@ olListP =
     return (startVal, firstItem : remainingItems)
 
 -- parses for a link ([text](link))
-linkP :: Parser Block
-linkP = undefined
+linkP :: Parser Text
+linkP = S.Link <$> bracketsP <*> parensP (many (noneOf ")"))
 
--- Link <$> getText <*> pure "abc"
--- where
---   getText = S.Line <$> brackets textP -- (char '[' *> manyTill textP (try (char ']')))
---   -- getLink = char '(' *> manyTill anyChar (try (char ')'))
+bracketsP :: Parser [Text]
+bracketsP = string "[" *> manyTill textP (try (string "]"))
 
--- getText = S.Line <$> (char '[' *> manyTill textP (try (char ']')))
+parensP :: Parser a -> Parser a
+parensP p = string "(" *> p <* string ")"
 
 -- parses for a img (![alt](src "title"))
 imgP :: Parser Block
@@ -126,7 +125,8 @@ lineP = S.Line <$> many1 textP <* char '\n'
 -- parses for a text string
 textP :: Parser Text
 textP =
-  try italicP
+  try linkP
+    <|> try italicP
     <|> try boldP
     <|> try strikeP
     <|> try inlineCodeP
@@ -161,7 +161,7 @@ normalP =
 -- parses for a string until a reserved character is found
 -- TODO: add this to syntax?
 stringP :: Parser String
-stringP = many1 $ noneOf ['*', '~', '`', '>', '_', '\n']
+stringP = many1 $ noneOf ['*', '~', '`', '>', '_', '[', ']', '\n']
 
 -- removes trailing whitespace
 wsP :: Parser a -> Parser a

@@ -124,9 +124,9 @@ test_linkP =
       [ p linkP "[()]\n" ~?= Left "No parses",
         p linkP "[google](google.com\n" ~?= Left "No parses",
         p linkP "[google]\n(google.com)\n" ~?= Left "No parses",
-        p linkP "[google](google.com)\n" ~?= Right (Link (Line [Normal "google"]) "google.com"),
-        p linkP "[](google.com)\n" ~?= Right (Link (Line [Normal ""]) "google.com"),
-        p linkP "[google]()\n" ~?= Right (Link (Line [Normal "google.com"]) "")
+        p linkP "[google](google.com)\n" ~?= Right (Link [Normal "google"] "google.com"),
+        p linkP "[](google.com)\n" ~?= Right (Link [] "google.com"),
+        p linkP "[google]()\n" ~?= Right (Link [Normal "google"] "")
       ]
 
 test_imgP =
@@ -230,6 +230,8 @@ test_all =
         test_paragraphP,
         test_ulListP,
         test_olListP,
+        test_linkP,
+        -- test_imgP,
         test_blockQuoteP,
         test_brPHrP,
         test_tableP,

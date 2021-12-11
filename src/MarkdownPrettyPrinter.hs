@@ -22,7 +22,6 @@ instance PP S.Block where
   pp (S.Paragraph l) = pp l
   pp (S.OrderedList ls) = undefined
   pp (S.UnorderedList ls) = undefined
-  pp (S.Link l href) = PP.parens $ PP.text href <> PP.brackets (pp l)
   pp (S.Image alt src title) = undefined
   -- TODO: handle multiple lines in blockquote
   pp (S.BlockQuote ls) = undefined -- PP.cat $ map (PP.text ">" <> pp) ls
@@ -35,6 +34,7 @@ instance PP S.Line where
   pp (S.Line ts) = PP.hcat (map pp ts) <> PP.text "\n"
 
 instance PP S.Text where
+  pp (S.Link l href) = PP.brackets (PP.hcat (map pp l)) <> PP.parens (PP.text href)
   pp (S.Bold s) = PP.text "**" <> PP.text s <> PP.text "**"
   pp (S.Italic s) = PP.text "*" <> PP.text s <> PP.text "*"
   pp (S.Strikethrough s) = PP.text "~~" <> PP.text s <> PP.text "~~"

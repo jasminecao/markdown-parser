@@ -21,7 +21,6 @@ fold f z (x:xs) = f x (fold f z xs)
 3. This is a numbered list.
 4. This is the second item.
 5. This is the third item.
-
 |]
 
 paragraph :: String

@@ -19,9 +19,20 @@ instance Arbitrary Text where
         Italic <$> genSafeString,
         Strikethrough <$> genSafeString,
         InlineCode <$> genSafeString,
+        Link <$> genLink <*> genSafeString,
         Normal <$> genSafeString
       ]
     where
+      genLink :: Gen [Text]
+      genLink =
+        QC.listOf1 arbitrary `QC.suchThat` noInnerLink
+
+      noInnerLink :: [Text] -> Bool
+      noInnerLink [] = True
+      noInnerLink (Link _ _ : _) = False
+      noInnerLink (Normal _ : Normal _ : _) = False
+      noInnerLink (_ : xs) = noInnerLink xs
+
       genSafeString :: Gen String
       genSafeString =
         QC.listOf1 (QC.elements (['a' .. 'z'] ++ ['A' .. 'Z'] ++ ['0' .. '9'] ++ [' ']))
@@ -34,6 +45,7 @@ instance Arbitrary Text where
   shrink (Italic str) = Italic <$> shrink str
   shrink (Strikethrough str) = Strikethrough <$> shrink str
   shrink (InlineCode str) = InlineCode <$> shrink str
+  shrink (Link l str) = Link l <$> shrink str
   shrink (Normal str) = Normal <$> shrink str
 
 instance Arbitrary S.Line where
@@ -49,9 +61,9 @@ instance Arbitrary S.Line where
       noConsecutiveNormal (Normal _ : Normal _ : _) = False
       noConsecutiveNormal (_ : rest) = noConsecutiveNormal rest
 
--- shrink (S.Line [x]) = S.Line <$> shrink [x]
--- shrink (S.Line (x : xs)) = [S.Line xs]
--- shrink _ = []
+  shrink (S.Line [x]) = S.Line <$> shrink [x]
+  shrink (S.Line (x : xs)) = [S.Line xs]
+  shrink _ = []
 
 instance Arbitrary TableType where
   arbitrary =
@@ -74,7 +86,6 @@ instance Arbitrary Block where
         genParagraph,
         genOrderedList,
         genUnorderedList,
-        genLink,
         genBlockQuote,
         genHr,
         genBr,
@@ -85,7 +96,6 @@ instance Arbitrary Block where
       genParagraph = Paragraph <$> arbitrary
       genOrderedList = OrderedList <$> arbitrary
       genUnorderedList = UnorderedList <$> arbitrary
-      genLink = (Link <$> arbitrary) <*> arbitrary
       genBlockQuote = BlockQuote <$> arbitrary
       genHr = pure Hr
       genBr = pure Br

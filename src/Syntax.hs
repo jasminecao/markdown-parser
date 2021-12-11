@@ -12,7 +12,6 @@ data Block
   | Paragraph Line -- p
   | OrderedList (Int, [Line]) -- start value, items
   | UnorderedList [Line]
-  | Link Line String -- a
   | Image String String String -- alt src title
   | BlockQuote [Line]
   | CodeBlock [Line]
@@ -44,5 +43,6 @@ data Text
   | Italic String
   | Strikethrough String
   | InlineCode String
+  | Link [Text] String -- a
   | Normal String
   deriving (Eq, Show)
