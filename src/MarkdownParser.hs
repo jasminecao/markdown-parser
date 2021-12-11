@@ -132,23 +132,25 @@ textP =
     <|> try inlineCodeP
     <|> try normalP
 
+-- parses for text between a beginning and end string
+betweenP :: String -> Parser String
+betweenP str = between (string str) (string str) $ many1 (noneOf (str ++ "\n"))
+
 -- parses for a bold string (**text**)
--- TODO: also add underscore parsing __text__
 boldP :: Parser Text
-boldP = Bold <$> between (string "**") (string "**") stringP
+boldP = Bold <$> (betweenP "**" <|> betweenP "__")
 
 -- parses for an italic string (*text*)
--- TODO: also add underscore parsing _text_
 italicP :: Parser Text
-italicP = Italic <$> between (char '*') (char '*') stringP
+italicP = Italic <$> (betweenP "*" <|> betweenP "_")
 
 -- parses for a strike through string (~~text~~)
 strikeP :: Parser Text
-strikeP = Strikethrough <$> between (string "~~") (string "~~") stringP
+strikeP = Strikethrough <$> betweenP "~~"
 
 -- parses for an inline code string (`text`)
 inlineCodeP :: Parser Text
-inlineCodeP = InlineCode <$> between (char '`') (char '`') stringP
+inlineCodeP = InlineCode <$> betweenP "`"
 
 -- parses for a normal, undecorated string
 normalP :: Parser Text
@@ -157,8 +159,9 @@ normalP =
     <|> Normal <$> many1 (noneOf "\n")
 
 -- parses for a string until a reserved character is found
+-- TODO: add this to syntax?
 stringP :: Parser String
-stringP = many1 $ noneOf ['*', '~', '`', '>', '\n']
+stringP = many1 $ noneOf ['*', '~', '`', '>', '_', '\n']
 
 -- removes trailing whitespace
 wsP :: Parser a -> Parser a

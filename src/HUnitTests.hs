@@ -19,7 +19,9 @@ test_boldP =
     ~: TestList
       [ p boldP "**bold word**" ~?= Right (Bold "bold word"),
         p boldP "*not bold*" ~?= Left "No parses",
-        p boldP "**also not bold" ~?= Left "No parses"
+        p boldP "**also not bold" ~?= Left "No parses",
+        p boldP "__bold word__" ~?= Right (Bold "bold word"),
+        p boldP "_not bold_" ~?= Left "No parses"
       ]
 
 test_italicP =
@@ -27,7 +29,9 @@ test_italicP =
     ~: TestList
       [ p italicP "*italic word*" ~?= Right (Italic "italic word"),
         p italicP "**not bold**" ~?= Left "No parses",
-        p italicP "*also not italic" ~?= Left "No parses"
+        p italicP "*also not italic" ~?= Left "No parses",
+        p italicP "_italic word_" ~?= Right (Italic "italic word"),
+        p italicP "___not italic_" ~?= Left "No parses"
       ]
 
 test_strikeP =
@@ -43,6 +47,7 @@ test_inlineCodeP =
   "inline code"
     ~: TestList
       [ p inlineCodeP "`regular code`" ~?= Right (InlineCode "regular code"),
+        p inlineCodeP "`special_char`" ~?= Right (InlineCode "special_char"),
         p inlineCodeP "`not code" ~?= Left "No parses"
       ]
 
@@ -75,6 +80,8 @@ test_lineP =
           ~?= Right (S.Line [Strikethrough "strike", Normal " ", InlineCode "code", Normal " ", Normal "*line"]),
         p lineP "`code` **line\nend"
           ~?= Right (S.Line [InlineCode "code", Normal " ", Normal "**line"]),
+        p lineP "regular text _not**line\n"
+          ~?= Right (Line [Normal "regular text ", Normal "_not**line"]),
         p lineP "``\n" ~?= Right (S.Line [Normal "``"])
       ]
 
@@ -105,8 +112,10 @@ test_olListP =
         p olListP "1. item 1\n" ~?= Right (OrderedList (1, [S.Line [Normal "item 1"]])),
         p olListP "1. item 1\n2. item 2\n" ~?= Right (OrderedList (1, [S.Line [Normal "item 1"], S.Line [Normal "item 2"]])),
         p olListP "11. item 1\n2. item 2\n" ~?= Right (OrderedList (11, [S.Line [Normal "item 1"], S.Line [Normal "item 2"]])),
-        -- TODO: figure out why this doesn't pass with no space between \n and 2
-        p olListP "1. item 1\n2.item 2\n" ~?= Right (OrderedList (1, [S.Line [Normal "item 1"]]))
+        p olListP "1. item 1\n2.item 2\n"
+          ~?= Right
+            ( OrderedList (1, [S.Line [Normal "item 1"], S.Line [Normal "item 2"]])
+            )
       ]
 
 test_linkP =
