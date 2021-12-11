@@ -96,10 +96,10 @@ instance Arbitrary Block where
   shrink (OrderedList ln) = OrderedList <$> shrink ln
 
 prop_roundtrip_text :: Text -> Bool
-prop_roundtrip_text t = parse textP "" (pretty t) == Right t
+prop_roundtrip_text t = parse textP "" (markdownPretty t) == Right t
 
 prop_roundtrip_line :: S.Line -> Bool
-prop_roundtrip_line l = parse lineP "" (pretty l) == Right l
+prop_roundtrip_line l = parse lineP "" (markdownPretty l) == Right l
 
 prop_roundtrip_block :: Block -> Bool
-prop_roundtrip_block b = parse blockP "" (pretty b) == Right b
+prop_roundtrip_block b = parse blockP "" (markdownPretty b) == Right b

@@ -5,8 +5,8 @@ import qualified Syntax as S
 import Text.PrettyPrint hiding (braces, parens, sep, (<>))
 import qualified Text.PrettyPrint as PP
 
-pretty :: PP a => a -> String
-pretty = PP.render . pp
+markdownPretty :: PP a => a -> String
+markdownPretty = PP.render . pp
 
 class PP a where
   pp :: a -> PP.Doc
