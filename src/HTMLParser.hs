@@ -47,6 +47,9 @@ container open close p = try open *> p <* try close
 simpleContainer :: String -> Parser a -> Parser a
 simpleContainer tag = container (openingTag tag) (closingTag tag)
 
+simpleContainerTest :: String -> Parser String
+simpleContainerTest tag = try (openingTag tag) *> manyTill anyChar (try (closingTag tag))
+
 parseHtml :: String -> Either ParseError Doc
 parseHtml = parse htmlP ""
 
@@ -123,9 +126,9 @@ hParagraphP :: Parser Block
 hParagraphP = Paragraph <$> simpleContainer "p" hLineP
 
 -- parses for a code block 
--- <pre><code>f :: a -> b\n</code><pre>
+-- <pre><code>f :: a -> b\n</code></pre>
 hCodeBlockP :: Parser Block
-hCodeBlockP = undefined -- CodeBlock <$> simpleContainer "pre" (many $ simpleContainer "code" hLineP)
+hCodeBlockP = CodeBlock <$> simpleContainer "pre" (simpleContainerTest "code")
 
 -- parses for a horizontal line <hr> or <hr/>
 hHrP :: Parser Block
@@ -155,23 +158,23 @@ betweenP str = between (string str) (string str) $ many1 (noneOf (str ++ "\n"))
 
 -- parses for a bold string (**text**)
 hBoldP :: Parser Text
-hBoldP = Bold <$> simpleContainer "b" text
+hBoldP = Bold <$> simpleContainerTest "b"
 
 -- parses for an italic string (*text*)
 hItalicP :: Parser Text
-hItalicP = Italic <$> simpleContainer "i" text
+hItalicP = Italic <$> simpleContainerTest "i"
 
 -- parses for a strike through string (~~text~~)
 hStrikeP :: Parser Text
-hStrikeP = Strikethrough <$> (simpleContainer "strike" text <|> simpleContainer "s" text)
+hStrikeP = Strikethrough <$> (try (simpleContainerTest "strike") <|> simpleContainerTest "s")
 
 -- parses for an inline code string (`text`)
 hInlineCodeP :: Parser Text
-hInlineCodeP = InlineCode <$> simpleContainer "code" text
+hInlineCodeP = InlineCode <$> simpleContainerTest "code"
 
 -- parses for a normal, undecorated string
 hNormalP :: Parser Text
-hNormalP = Normal <$> text
+hNormalP = Normal <$> simpleContainerTest "span"
 
 -- parses for a string until a reserved character is found
 -- TODO: add this to syntax?

@@ -36,7 +36,7 @@ instance PP S.Text where
   pp (S.Strikethrough s) = tag "del" $ PP.text s
   pp (S.InlineCode s) = tag "code" $ PP.text s
   pp (S.Link l href) = tagWithAttrs "a" [("href", href)] $ PP.hcat (map pp l)
-  pp (S.Normal s) = PP.text s -- TODO: maybe <span>?
+  pp (S.Normal s) = tag "span" $ PP.text s
 
 tag :: String -> PP.Doc -> PP.Doc
 tag t = tagWithAttrs t []
