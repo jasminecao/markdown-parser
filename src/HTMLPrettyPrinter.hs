@@ -20,8 +20,7 @@ instance PP S.Block where
   pp (S.OrderedList (startVal, ls)) =
     tagWithAttrs "ol" [("start", show startVal)] (PP.hcat $ map (tag "li" . pp) ls)
   pp (S.UnorderedList ls) = tag "ul" (PP.hcat $ map (tag "li" . pp) ls)
-  pp (S.Link l href) = tagWithAttrs "a" [("href", href)] (pp l)
-  pp (S.Image alt src title) = undefined
+  pp (S.Image alt src) = undefined
   -- TODO: handle multiple lines in blockquote
   pp (S.BlockQuote ls) = tag "blockquote" (PP.hcat $ map (tag "p" . pp) ls)
   -- TODO: refactor?
@@ -41,6 +40,7 @@ instance PP S.Text where
   pp (S.Italic s) = tag "i" $ PP.text s
   pp (S.Strikethrough s) = tag "del" $ PP.text s
   pp (S.InlineCode s) = tag "code" $ PP.text s
+  pp (S.Link l href) = tagWithAttrs "a" [("href", href)] $ PP.hcat (map pp l)
   pp (S.Normal s) = PP.text s -- TODO: maybe <span>?
 
 tag :: String -> PP.Doc -> PP.Doc

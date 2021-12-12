@@ -102,7 +102,8 @@ test_ulListP =
         p ulListP "- item 1\n" ~?= Right (UnorderedList [S.Line [Normal "item 1"]]),
         p ulListP "- item 1\ndontparsethis" ~?= Right (UnorderedList [S.Line [Normal "item 1"]]),
         p ulListP "- item 1\n- item 2\n" ~?= Right (UnorderedList [S.Line [Normal "item 1"], S.Line [Normal "item 2"]]),
-        p ulListP "- item 1\n-item 2\n" ~?= Right (UnorderedList [S.Line [Normal "item 1"], S.Line [Normal "item 2"]])
+        p ulListP "- item 1\n-item 2\n" ~?= Right (UnorderedList [S.Line [Normal "item 1"], S.Line [Normal "item 2"]]),
+        p ulListP "* item 1\n* item 2\n" ~?= Right (UnorderedList [S.Line [Normal "item 1"], S.Line [Normal "item 2"]])
       ]
 
 test_olListP =

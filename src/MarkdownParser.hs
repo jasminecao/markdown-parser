@@ -46,16 +46,15 @@ headingP = do
   Heading (length hx) <$> lineP
 
 -- TODO: figure out how to implement sublists?
--- TODO: parse for `*` too
 -- parses for an unordered list (- list item)
 ulListP :: Parser Block
 ulListP =
   UnorderedList <$> do
-    wsP $ string "- " -- first hyphen must have at least one space after
+    wsP $ string "- " <|> string "*" -- first hyphen must have at least one space after
     firstItem <- lineP
     remainingItems <- many $
       do
-        wsP $ string "-"
+        wsP $ string "-" <|> string "*"
         lineP
     return $ firstItem : remainingItems
 
