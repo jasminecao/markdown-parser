@@ -17,8 +17,23 @@ p3 parser str = case parse parser "" str of
 htmlReserved :: Char -> Bool
 htmlReserved c = c `elem` ['/', '<', '>']
 
+htmlTags :: [String]
+htmlTags =
+      [ "html",
+        "blockquote", "code", "pre", "img",
+        "h1", "h2", "h3", "h4", "h5", "h6", "hr", "br",
+        "ol", "ul", "li",
+        "p", "i", "b", "a", "del",
+        "table", "tbody", "thead", "tfoot",  "tbody", "td", "th", "tr"
+      ]
+
 text :: Parser String
-text = many1 $ satisfy (not . htmlReserved)
+text = (:) <$> satisfy (not . htmlReserved) <*> manyTill anyChar -- fake many1Till
+    (choice $
+        [try (openingTag tag) | tag <- htmlTags] ++
+        [try (closingTag tag) | tag <- htmlTags] ++
+        [eof $> ""]
+    ) --(choice (map (try . openingTag) htmlTags))
 
 quotesP :: Parser String
 quotesP = betweenP "\""
@@ -71,12 +86,13 @@ hBlockP = tryBlockP <* many (string "\n")
         <|> try hCodeBlockP
         <|> hParagraphP
 
--- parses for # heading and converts rest of line to Line
+-- parses headings
+-- <h1>HEADING</h1> <a href=\"url\">ONE</a></h1>
 hHeadingP :: Parser Block
-hHeadingP = do
-  hx <- wsP $ many1 (char '#')
-  Monad.guard (length hx < 7)
-  Heading (length hx) <$> hLineP
+hHeadingP = choice [checkHeader i | i <- [1..6] ]
+    where
+      checkHeader :: Int -> Parser Block
+      checkHeader i = try $ Heading i <$> simpleContainer ("h" ++ show i) hLineP
 
 hLiP :: Parser String
 hLiP = simpleContainer "li" text
@@ -118,7 +134,7 @@ hImgP = Image "alt" <$> openingWithAttr "img" "src"
 
 -- parses for a <blockquote><p>abcde</p><p>fghij</p></blockquote>
 hQuoteP :: Parser Block
-hQuoteP = BlockQuote <$> simpleContainer "blockquote" (many1 $ simpleContainer "p" hLineP) -- (many $ simpleContainer "p" hLineP)
+hQuoteP = BlockQuote <$> simpleContainer "blockquote" (many1 $ simpleContainer "p" hLineP)
 
 -- parses for a <p></p>
 -- <p>this is fun\n<i>yes</i></p>
@@ -140,7 +156,7 @@ hBrP = (try (openingTag "br") <|> string "<br/>") $> Br
 
 -- parses a line of text to handle style (bold, italics, inline code, etc)
 hLineP :: Parser S.Line
-hLineP = S.Line <$> many1 textP
+hLineP = S.Line <$> many textP
 
 -- parses for a text string
 textP :: Parser Text
@@ -166,7 +182,7 @@ hItalicP = Italic <$> simpleContainerTest "i"
 
 -- parses for a strike through string (~~text~~)
 hStrikeP :: Parser Text
-hStrikeP = Strikethrough <$> (try (simpleContainerTest "strike") <|> simpleContainerTest "s")
+hStrikeP = Strikethrough <$> simpleContainerTest "del"
 
 -- parses for an inline code string (`text`)
 hInlineCodeP :: Parser Text
@@ -174,7 +190,7 @@ hInlineCodeP = InlineCode <$> simpleContainerTest "code"
 
 -- parses for a normal, undecorated string
 hNormalP :: Parser Text
-hNormalP = Normal <$> simpleContainerTest "span"
+hNormalP = Normal <$> text
 
 -- parses for a string until a reserved character is found
 -- TODO: add this to syntax?
