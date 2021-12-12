@@ -52,11 +52,11 @@ ulListP :: Parser Block
 ulListP =
   UnorderedList <$> do
     wsP $ string "- " -- first hyphen must have at least one space after
-    firstItem <- eolP
+    firstItem <- lineP
     remainingItems <- many $
       do
         wsP $ string "-"
-        eolP
+        lineP
     return $ firstItem : remainingItems
 
 -- parses for an ordered list (1. list item)
@@ -65,11 +65,11 @@ olListP =
   OrderedList <$> do
     startVal <- int
     wsP (string ". ")
-    firstItem <- eolP
+    firstItem <- lineP
     remainingItems <- many $
       do
         int <* wsP (string ".")
-        eolP
+        lineP
     return (startVal, firstItem : remainingItems)
 
 -- parses for a link ([text](link))
@@ -93,7 +93,7 @@ quoteP = BlockQuote <$> many1 quoteNewLinesP
     quoteNewLinesP :: Parser S.Line
     quoteNewLinesP = do
       wsP $ char '>'
-      eolP
+      lineP
 
 -- parses for a paragraph
 paragraphP :: Parser Block
@@ -106,11 +106,7 @@ codeBlockP = CodeBlock <$> codeNewLinesP
     codeNewLinesP :: Parser [S.Line]
     codeNewLinesP = do
       string "```\n"
-      manyTill eolP (try (string "```\n"))
-
--- parses a string until the end of the line (\n char)
-eolP :: Parser S.Line
-eolP = S.Line . (: []) <$> (Normal <$> many (noneOf "\n")) <* newLineChar
+      manyTill lineP (try (string "```\n"))
 
 -- parses for a horizontal link (---)
 hrP :: Parser Block

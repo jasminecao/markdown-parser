@@ -35,7 +35,7 @@ instance Arbitrary Text where
 
       genSafeString :: Gen String
       genSafeString =
-        QC.listOf1 (QC.elements (['a' .. 'z'] ++ ['A' .. 'Z'] ++ ['0' .. '9'] ++ [' ']))
+        QC.listOf1 (QC.elements (['a' .. 'z'] ++ ['A' .. 'Z'] ++ ['0' .. '9']))
 
   -- ( (arbitrary :: Gen Char)
   --     `QC.suchThat` (`notElem` reservedMarkdownChars)
@@ -45,7 +45,7 @@ instance Arbitrary Text where
   shrink (Italic str) = Italic <$> shrink str
   shrink (Strikethrough str) = Strikethrough <$> shrink str
   shrink (InlineCode str) = InlineCode <$> shrink str
-  shrink (Link l str) = Link l <$> shrink str
+  shrink (Link l str) = [Link l' str | l' <- shrink l]
   shrink (Normal str) = Normal <$> shrink str
 
 instance Arbitrary S.Line where
@@ -94,18 +94,24 @@ instance Arbitrary Block where
     where
       genHeading = (Heading <$> choose (1, 6)) <*> arbitrary
       genParagraph = Paragraph <$> arbitrary
-      genOrderedList = OrderedList <$> arbitrary
-      genUnorderedList = UnorderedList <$> arbitrary
-      genBlockQuote = BlockQuote <$> arbitrary
+      genOrderedList = OrderedList <$> Monad.liftM2 (,) ((arbitrary :: Gen Int) `QC.suchThat` (>= 0)) (QC.listOf1 arbitrary)
+      genUnorderedList = UnorderedList <$> QC.listOf1 arbitrary
+      genBlockQuote = BlockQuote <$> QC.listOf1 arbitrary
       genHr = pure Hr
       genBr = pure Br
       genTable = arbitrary
 
--- shrink (Heading n ln) = Heading n <$> shrink ln
--- shrink (Paragraph ln) = Paragraph <$> shrink ln
--- shrink (OrderedList (i, ln)) = OrderedList <$> (i, shrink ln)
--- shrink (UnorderedList ln) = UnorderedList <$> shrink ln
--- shrink _ = undefined
+  shrink (Heading n ln) = Heading n <$> shrink ln
+  shrink (Paragraph ln) = Paragraph <$> shrink ln
+  shrink (OrderedList (i, ln)) = [OrderedList (i, ln') | ln' <- shrink ln, not (null ln')]
+  shrink (UnorderedList ln) = [UnorderedList ln' | ln' <- shrink ln, not (null ln')]
+  shrink (Image alt src) = Image alt <$> shrink src
+  -- TODO: shrink BlockQuote
+  shrink (BlockQuote ln) = undefined --[BlockQuote ln' | ln' <- shrink ln, not (null ln'), not]
+  shrink (CodeBlock ln) = CodeBlock <$> shrink ln
+  shrink Hr = [Hr]
+  shrink Br = [Br]
+  shrink (Table t) = undefined
 
 prop_roundtrip_text :: Text -> Bool
 prop_roundtrip_text t = parse textP "" (markdownPretty t) == Right t
@@ -115,3 +121,12 @@ prop_roundtrip_line l = parse lineP "" (markdownPretty l) == Right l
 
 prop_roundtrip_block :: Block -> Bool
 prop_roundtrip_block b = parse blockP "" (markdownPretty b) == Right b
+
+qc :: IO ()
+qc = do
+  putStrLn "roundtrip_text"
+  QC.quickCheck prop_roundtrip_text
+  putStrLn "roundtrip_line"
+  QC.quickCheck prop_roundtrip_line
+  putStrLn "roundtrip_block"
+  QC.quickCheck prop_roundtrip_block

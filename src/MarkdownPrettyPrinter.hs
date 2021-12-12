@@ -20,14 +20,18 @@ instance PP S.Block where
       <> PP.space
       <> pp l
   pp (S.Paragraph l) = pp l
-  pp (S.OrderedList ls) = undefined
-  pp (S.UnorderedList ls) = undefined
+  pp (S.OrderedList (i, ls)) = printListItem i ls
+    where
+      printListItem :: Int -> [S.Line] -> PP.Doc
+      printListItem i [] = mempty
+      printListItem i (l : ls) =
+        PP.text (show i) <> PP.text ". " <> pp l <> printListItem (i + 1) ls
+  pp (S.UnorderedList ls) = PP.hcat $ map ((PP.text "- " <>) . pp) ls
   pp (S.Image alt src) = PP.text "!" <> PP.brackets (PP.text alt) <> PP.parens (PP.text src)
-  -- TODO: handle multiple lines in blockquote
-  pp (S.BlockQuote ls) = undefined --PP.vcat (map pp ls)
-  pp (S.CodeBlock ls) = undefined --PP.text "```\n" <> PP.space <> PP.text str <> PP.text "\n```"
+  pp (S.BlockQuote ls) = PP.hcat $ map ((PP.text ">" <>) . pp) ls
+  pp (S.CodeBlock ls) = PP.text "```\n" <> PP.cat (map pp ls) <> PP.text "```"
   pp S.Hr = PP.text "---\n"
-  pp S.Br = PP.text "\n"
+  pp S.Br = PP.text "\n\n"
   pp (S.Table ls) = undefined
 
 instance PP S.Line where
