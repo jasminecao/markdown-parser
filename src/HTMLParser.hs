@@ -26,14 +26,11 @@ quotesP = betweenP "\""
 openingTag :: String -> Parser String
 openingTag tag = string $ '<' : tag ++ ">"
 
-attr :: String -> Parser String 
+attr :: String -> Parser String
 attr name = string name *> string "=" *> quotesP
 
 openingWithAttr :: String -> String -> Parser String
-openingWithAttr tag name = (wsP $ string ('<' : tag)) *> attr name <* string ">"
-
--- openingTagWithAttrs :: String -> Parser String
--- openingTagWithAttrs tag = string $ '<' : tag ++ ">"
+openingWithAttr tag name = wsP (string ('<' : tag)) *> attr name <* string ">"
 
 closingTag :: String -> Parser String
 closingTag tag = string $ '<' : '/' : tag ++ ">"
@@ -76,9 +73,9 @@ hHeadingP :: Parser Block
 hHeadingP = do
   hx <- wsP $ many1 (char '#')
   Monad.guard (length hx < 7)
-  Heading (length hx) <$> lineP
+  Heading (length hx) <$> hLineP
 
-hLiP :: Parser String 
+hLiP :: Parser String
 hLiP = simpleContainer "li" text
 
 -- TODO: figure out how to implement sublists?
@@ -87,11 +84,11 @@ hUListP :: Parser Block
 hUListP =
   UnorderedList <$> do
     wsP $ string "- " <|> string "*" -- first hyphen must have at least one space after
-    firstItem <- lineP
+    firstItem <- hLineP
     remainingItems <- many $
       do
         wsP $ string "-" <|> string "*"
-        lineP
+        hLineP
     return $ firstItem : remainingItems
 
 -- parses for an ordered list (1. list item)
@@ -100,14 +97,14 @@ hOListP =
   OrderedList <$> do
     startVal <- int
     wsP (string ". ")
-    firstItem <- lineP
+    firstItem <- hLineP
     remainingItems <- many $
       do
         int <* wsP (string ".")
-        lineP
+        hLineP
     return (startVal, firstItem : remainingItems)
 
--- parses for a link <a href=\"url\">stuff<\a>
+-- parses for a link <a href=\"url\">stuff</a>
 hLinkP :: Parser Text
 hLinkP =  flip Link <$> openingWithAttr "a" "href" <*> many textP <* closingTag "a"
 
@@ -123,11 +120,11 @@ hQuoteP = BlockQuote <$> many1 quoteNewLinesP
     quoteNewLinesP :: Parser S.Line
     quoteNewLinesP = do
       wsP $ char '>'
-      lineP
+      hLineP
 
 -- parses for a paragraph
 hParagraphP :: Parser Block
-hParagraphP = Paragraph <$> lineP
+hParagraphP = Paragraph <$> hLineP
 
 -- parses for a code block (```\n code \n```)
 hCodeBlockP :: Parser Block
@@ -136,19 +133,19 @@ hCodeBlockP = CodeBlock <$> codeNewLinesP
     codeNewLinesP :: Parser [S.Line]
     codeNewLinesP = do
       string "```\n"
-      manyTill lineP (try (string "```\n"))
+      manyTill hLineP (try (string "```\n"))
 
 -- parses for a horizontal line <hr> or <hr/>
 hHrP :: Parser Block
-hHrP = (openingTag "hr" <|> string "<hr/>") $> Hr
+hHrP = (try (openingTag "hr") <|> string "<hr/>") $> Hr
 
 -- parses for an newline <br> or </br>
 hBrP :: Parser Block
-hBrP = (openingTag "br" <|> string "<br/>") $> Br
+hBrP = (try (openingTag "br") <|> string "<br/>") $> Br
 
 -- parses a line of text to handle style (bold, italics, inline code, etc)
-lineP :: Parser S.Line
-lineP = S.Line <$> many1 textP <* char '\n'
+hLineP :: Parser S.Line
+hLineP = S.Line <$> many1 textP
 
 -- parses for a text string
 textP :: Parser Text
