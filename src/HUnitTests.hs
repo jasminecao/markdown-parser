@@ -14,6 +14,9 @@ p parser str = case parse parser "" str of
   Left err -> Left "No parses"
   Right x -> Right x
 
+
+{- MARKDOWN TESTS -}
+
 test_boldP =
   "bold"
     ~: TestList
@@ -214,26 +217,35 @@ test_markdownP =
             )
       ]
 
-test_all =
-  runTestTT $
-    TestList
-      [ test_boldP,
-        test_italicP,
-        test_strikeP,
-        test_inlineCodeP,
-        test_normalP,
-        test_textP,
-        test_lineP,
-        test_headingP,
-        test_codeBlockP,
-        test_paragraphP,
-        test_ulListP,
-        test_olListP,
-        test_linkP,
-        test_imgP,
-        test_blockQuoteP,
-        test_brPHrP,
-        test_tableP,
-        test_blockP,
-        test_markdownP
-      ]
+markdownTests = TestList
+  [ test_boldP,
+    test_italicP,
+    test_strikeP,
+    test_inlineCodeP,
+    test_normalP,
+    test_textP,
+    test_lineP,
+    test_headingP,
+    test_codeBlockP,
+    test_paragraphP,
+    test_ulListP,
+    test_olListP,
+    test_linkP,
+    test_imgP,
+    test_blockQuoteP,
+    test_brPHrP,
+    test_tableP,
+    test_blockP,
+    test_markdownP
+  ]
+
+{- HTML TESTS -}
+
+htmlTests = TestList []
+
+test_all = do
+  print "RUNNING MARKDOWN TESTS"
+  runTestTT markdownTests
+  print "******************"
+  print "RUNNING HTML TESTS"
+  runTestTT htmlTests
