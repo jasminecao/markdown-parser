@@ -3,6 +3,7 @@ module HTMLParser where
 import qualified Control.Monad as Monad
 import Data.Char (isSpace)
 import Syntax (Block (..), Doc (Doc), Line, Text (..))
+import Data.Functor (($>))
 import qualified Syntax as S
 import Text.Parsec.Token
 import Text.ParserCombinators.Parsec
@@ -19,21 +20,37 @@ htmlReserved c = c `elem` ['/', '<', '>']
 text :: Parser String
 text = many1 $ satisfy (not . htmlReserved)
 
+quotesP :: Parser String
+quotesP = betweenP "\""
+
 openingTag :: String -> Parser String
 openingTag tag = string $ '<' : tag ++ ">"
+
+attr :: String -> Parser String 
+attr name = string name *> string "=" *> quotesP
+
+openingWithAttr :: String -> String -> Parser String
+openingWithAttr tag name = (wsP $ string ('<' : tag)) *> attr name <* string ">"
+
+-- openingTagWithAttrs :: String -> Parser String
+-- openingTagWithAttrs tag = string $ '<' : tag ++ ">"
 
 closingTag :: String -> Parser String
 closingTag tag = string $ '<' : '/' : tag ++ ">"
 
 -- Parser between tags
-container :: String -> Parser a -> Parser a
-container tag p = openingTag tag *> p <* closingTag tag
+container :: Parser b -> Parser c -> Parser a -> Parser a
+container open close p = open *> p <* close
+-- TODO check the two are the same
 -- container tag p = if x == tag && z == tag then y else Left "no parses" where
 --                 (x,y,z) = (,,) <$> openingTag
 --                             <*> p
 --                             <*> closingTag
 
-{-parseHtml :: String -> Either ParseError Doc
+simpleContainer :: String -> Parser a -> Parser a
+simpleContainer tag = container (openingTag tag) (closingTag tag)
+
+parseHtml :: String -> Either ParseError Doc
 parseHtml = parse htmlP ""
 
 htmlP :: Parser Doc
@@ -61,10 +78,13 @@ hHeadingP = do
   Monad.guard (length hx < 7)
   Heading (length hx) <$> lineP
 
+hLiP :: Parser String 
+hLiP = simpleContainer "li" text
+
 -- TODO: figure out how to implement sublists?
 -- parses for an unordered list (- list item)
-ulListP :: Parser Block
-ulListP =
+hUListP :: Parser Block
+hUListP =
   UnorderedList <$> do
     wsP $ string "- " <|> string "*" -- first hyphen must have at least one space after
     firstItem <- lineP
@@ -75,8 +95,8 @@ ulListP =
     return $ firstItem : remainingItems
 
 -- parses for an ordered list (1. list item)
-olListP :: Parser Block
-olListP =
+hOListP :: Parser Block
+hOListP =
   OrderedList <$> do
     startVal <- int
     wsP (string ". ")
@@ -87,23 +107,18 @@ olListP =
         lineP
     return (startVal, firstItem : remainingItems)
 
--- parses for a link ([text](link))
-linkP :: Parser Text
-linkP = S.Link <$> bracketsP (manyTill textP (string "]")) <*> parensP (many (noneOf ")"))
+-- parses for a link <a href=\"url\">stuff<\a>
+hLinkP :: Parser Text
+hLinkP =  flip Link <$> openingWithAttr "a" "href" <*> many textP <* closingTag "a"
 
-bracketsP :: Parser a -> Parser a
-bracketsP p = string "[" *> p <* optional (string "]")
-
-parensP :: Parser a -> Parser a
-parensP p = string "(" *> p <* string ")"
-
--- parses for a img (![alt](src "title"))
-imgP :: Parser Block
-imgP = string "!" *> (Image <$> bracketsP (many (noneOf "]")) <*> parensP (many1 (noneOf ")")))
+-- parses for a <img src=\"url\">
+-- TODO empty alt?
+hImgP :: Parser Block
+hImgP = Image "alt" <$> openingWithAttr "img" "src"
 
 -- parses for a quote block (> quote)
-quoteP :: Parser Block
-quoteP = BlockQuote <$> many1 quoteNewLinesP
+hQuoteP :: Parser Block
+hQuoteP = BlockQuote <$> many1 quoteNewLinesP
   where
     quoteNewLinesP :: Parser S.Line
     quoteNewLinesP = do
@@ -111,25 +126,25 @@ quoteP = BlockQuote <$> many1 quoteNewLinesP
       lineP
 
 -- parses for a paragraph
-paragraphP :: Parser Block
-paragraphP = Paragraph <$> lineP
+hParagraphP :: Parser Block
+hParagraphP = Paragraph <$> lineP
 
 -- parses for a code block (```\n code \n```)
-codeBlockP :: Parser Block
-codeBlockP = CodeBlock <$> codeNewLinesP
+hCodeBlockP :: Parser Block
+hCodeBlockP = CodeBlock <$> codeNewLinesP
   where
     codeNewLinesP :: Parser [S.Line]
     codeNewLinesP = do
       string "```\n"
       manyTill lineP (try (string "```\n"))
 
--- parses for a horizontal link (---)
-hrP :: Parser Block
-hrP = string "---" $> Hr
+-- parses for a horizontal line <hr> or <hr/>
+hHrP :: Parser Block
+hHrP = (openingTag "hr" <|> string "<hr/>") $> Hr
 
--- parses for an empty line
-brP :: Parser Block -- ???
-brP = string "\n\n" $> Br -- Br <$> string "---"
+-- parses for an newline <br> or </br>
+hBrP :: Parser Block
+hBrP = (openingTag "br" <|> string "<br/>") $> Br
 
 -- parses a line of text to handle style (bold, italics, inline code, etc)
 lineP :: Parser S.Line
@@ -138,38 +153,36 @@ lineP = S.Line <$> many1 textP <* char '\n'
 -- parses for a text string
 textP :: Parser Text
 textP =
-  try linkP
-    <|> try italicP
-    <|> try boldP
-    <|> try strikeP
-    <|> try inlineCodeP
-    <|> try normalP
+  try hLinkP
+    <|> try hItalicP
+    <|> try hBoldP
+    <|> try hStrikeP
+    <|> try hInlineCodeP
+    <|> try hNormalP
 
 -- parses for text between a beginning and end string
 betweenP :: String -> Parser String
 betweenP str = between (string str) (string str) $ many1 (noneOf (str ++ "\n"))
 
 -- parses for a bold string (**text**)
-boldP :: Parser Text
-boldP = Bold <$> (betweenP "**" <|> betweenP "__")
+hBoldP :: Parser Text
+hBoldP = Bold <$> simpleContainer "b" text
 
 -- parses for an italic string (*text*)
-italicP :: Parser Text
-italicP = Italic <$> (betweenP "*" <|> betweenP "_")
+hItalicP :: Parser Text
+hItalicP = Italic <$> simpleContainer "i" text
 
 -- parses for a strike through string (~~text~~)
-strikeP :: Parser Text
-strikeP = Strikethrough <$> betweenP "~~"
+hStrikeP :: Parser Text
+hStrikeP = Strikethrough <$> (simpleContainer "strike" text <|> simpleContainer "s" text)
 
 -- parses for an inline code string (`text`)
-inlineCodeP :: Parser Text
-inlineCodeP = InlineCode <$> betweenP "`"
+hInlineCodeP :: Parser Text
+hInlineCodeP = InlineCode <$> simpleContainer "code" text
 
 -- parses for a normal, undecorated string
-normalP :: Parser Text
-normalP =
-  try (Normal <$> stringP)
-    <|> Normal <$> many1 (noneOf "\n")
+hNormalP :: Parser Text
+hNormalP = Normal <$> text
 
 -- parses for a string until a reserved character is found
 -- TODO: add this to syntax?
@@ -186,4 +199,4 @@ newLineChar = string "\n"
 
 -- parses for an integer
 int :: Parser Int
-int = read <$> many1 digit-}
+int = read <$> many1 digit
