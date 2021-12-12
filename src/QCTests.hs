@@ -101,9 +101,11 @@ instance Arbitrary Block where
       genBr = pure Br
       genTable = arbitrary
 
-  shrink (Heading n ln) = Heading n <$> shrink ln
-  shrink (Paragraph ln) = Paragraph <$> shrink ln
-  shrink (OrderedList ln) = OrderedList <$> shrink ln
+-- shrink (Heading n ln) = Heading n <$> shrink ln
+-- shrink (Paragraph ln) = Paragraph <$> shrink ln
+-- shrink (OrderedList (i, ln)) = OrderedList <$> (i, shrink ln)
+-- shrink (UnorderedList ln) = UnorderedList <$> shrink ln
+-- shrink _ = undefined
 
 prop_roundtrip_text :: Text -> Bool
 prop_roundtrip_text t = parse textP "" (markdownPretty t) == Right t

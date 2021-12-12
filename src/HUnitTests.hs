@@ -134,10 +134,8 @@ test_imgP =
     ~: TestList
       [ p imgP "[google](google.com)\n" ~?= Left "No parses",
         p imgP "![google]\n(google.com)\n" ~?= Left "No parses",
-        p imgP "![img](image.png)\n" ~?= Right (Image "img" "image.png" ""),
-        p imgP "![img](image.png \"Title\")\n" ~?= Right (Image "img" "image.png" "Title"),
-        p imgP "![img](image.png \"A title\")\n" ~?= Right (Image "img" "image.png" "A title"),
-        p imgP "![](image.png \"noalt\")\n" ~?= Right (Image "" "image.png" "noalt")
+        p imgP "![img](image.png)" ~?= Right (Image "img" "image.png"),
+        p imgP "![](image.png)" ~?= Right (Image "" "image.png")
       ]
 
 test_blockQuoteP =
@@ -231,7 +229,7 @@ test_all =
         test_ulListP,
         test_olListP,
         test_linkP,
-        -- test_imgP,
+        test_imgP,
         test_blockQuoteP,
         test_brPHrP,
         test_tableP,

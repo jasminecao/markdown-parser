@@ -12,7 +12,7 @@ data Block
   | Paragraph Line -- p
   | OrderedList (Int, [Line]) -- start value, items
   | UnorderedList [Line]
-  | Image String String String -- alt src title
+  | Image String String -- alt src
   | BlockQuote [Line]
   | CodeBlock [Line]
   | Hr -- empty

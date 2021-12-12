@@ -28,7 +28,9 @@ blockP :: Parser Block
 blockP = tryBlockP <* many (string "\n")
   where
     tryBlockP =
-      try brP
+      try imgP
+        <|> try brP
+        <|> try hrP
         <|> try headingP
         <|> try ulListP
         <|> try olListP
@@ -72,17 +74,17 @@ olListP =
 
 -- parses for a link ([text](link))
 linkP :: Parser Text
-linkP = S.Link <$> bracketsP <*> parensP (many (noneOf ")"))
+linkP = S.Link <$> bracketsP (manyTill textP (string "]")) <*> parensP (many (noneOf ")"))
 
-bracketsP :: Parser [Text]
-bracketsP = string "[" *> manyTill textP (try (string "]"))
+bracketsP :: Parser a -> Parser a
+bracketsP p = string "[" *> p <* optional (string "]")
 
 parensP :: Parser a -> Parser a
 parensP p = string "(" *> p <* string ")"
 
 -- parses for a img (![alt](src "title"))
 imgP :: Parser Block
-imgP = undefined
+imgP = string "!" *> (Image <$> bracketsP (many (noneOf "]")) <*> parensP (many1 (noneOf ")")))
 
 -- parses for a quote block (> quote)
 quoteP :: Parser Block
