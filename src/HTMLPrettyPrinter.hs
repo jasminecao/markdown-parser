@@ -13,7 +13,6 @@ class PP a where
 
 instance PP S.Doc where
   pp (S.Doc bs) = tag "html" $ PP.hcat $ map pp bs
-
 instance PP S.Block where
   pp (S.Heading n l) = tag ("h" ++ show n) (pp l)
   pp (S.Paragraph l) = tag "p" (pp l)
@@ -21,13 +20,9 @@ instance PP S.Block where
     tagWithAttrs "ol" [("start", show startVal)] (PP.hcat $ map (tag "li" . pp) ls)
   pp (S.UnorderedList ls) = tag "ul" (PP.hcat $ map (tag "li" . pp) ls)
   pp (S.Image alt src) = undefined
-  -- TODO: handle multiple lines in blockquote
   pp (S.BlockQuote ls) = tag "blockquote" (PP.hcat $ map (tag "p" . pp) ls)
   -- TODO: refactor?
-  pp (S.CodeBlock str) = tag "pre" $ tag "code" (PP.hcat $ map appendWithLine str)
-    where
-      appendWithLine :: Line -> PP.Doc
-      appendWithLine l = pp l <> PP.text "<br>"
+  pp (S.CodeBlock str) = tag "pre" $ tag "code" (PP.text str)
   pp S.Hr = PP.text "<hr>"
   pp S.Br = PP.text "<br>"
   pp (S.Table ls) = undefined

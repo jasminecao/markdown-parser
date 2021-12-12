@@ -14,7 +14,7 @@ data Block
   | UnorderedList [Line]
   | Image String String -- alt src
   | BlockQuote [Line]
-  | CodeBlock [Line]
+  | CodeBlock String
   | Hr -- empty
   | Br -- empty
   | Table TableType

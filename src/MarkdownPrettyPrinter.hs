@@ -29,7 +29,7 @@ instance PP S.Block where
   pp (S.UnorderedList ls) = PP.hcat $ map ((PP.text "- " <>) . pp) ls
   pp (S.Image alt src) = PP.text "!" <> PP.brackets (PP.text alt) <> PP.parens (PP.text src)
   pp (S.BlockQuote ls) = PP.hcat $ map ((PP.text ">" <>) . pp) ls
-  pp (S.CodeBlock ls) = PP.text "```\n" <> PP.cat (map pp ls) <> PP.text "```"
+  pp (S.CodeBlock str) = PP.text "```\n" <> PP.text str <> PP.text "```"
   pp S.Hr = PP.text "---\n"
   pp S.Br = PP.text "\n\n"
   pp (S.Table ls) = undefined

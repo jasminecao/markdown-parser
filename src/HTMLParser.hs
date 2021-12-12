@@ -122,14 +122,10 @@ hQuoteP = BlockQuote <$> simpleContainer "blockquote" (many1 $ simpleContainer "
 hParagraphP :: Parser Block
 hParagraphP = Paragraph <$> simpleContainer "p" hLineP
 
--- parses for a code block (```\n code \n```)
+-- parses for a code block 
+-- <pre><code>f :: a -> b\n</code><pre>
 hCodeBlockP :: Parser Block
-hCodeBlockP = CodeBlock <$> codeNewLinesP
-  where
-    codeNewLinesP :: Parser [S.Line]
-    codeNewLinesP = do
-      string "```\n"
-      manyTill hLineP (try (string "```\n"))
+hCodeBlockP = undefined -- CodeBlock <$> simpleContainer "pre" (many $ simpleContainer "code" hLineP)
 
 -- parses for a horizontal line <hr> or <hr/>
 hHrP :: Parser Block

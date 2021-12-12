@@ -50,11 +50,11 @@ headingP = do
 ulListP :: Parser Block
 ulListP =
   UnorderedList <$> do
-    wsP $ string "- " <|> string "*" -- first hyphen must have at least one space after
+    wsP (string "- " <|> string "* ") -- first hyphen must have at least one space after
     firstItem <- lineP
     remainingItems <- many $
       do
-        wsP $ string "-" <|> string "*"
+        wsP (string "-" <|> string "*")
         lineP
     return $ firstItem : remainingItems
 
@@ -100,12 +100,7 @@ paragraphP = Paragraph <$> lineP
 
 -- parses for a code block (```\n code \n```)
 codeBlockP :: Parser Block
-codeBlockP = CodeBlock <$> codeNewLinesP
-  where
-    codeNewLinesP :: Parser [S.Line]
-    codeNewLinesP = do
-      string "```\n"
-      manyTill lineP (try (string "```\n"))
+codeBlockP = CodeBlock <$> (string "```\n" *> manyTill anyChar (try (string "```\n")))
 
 -- parses for a horizontal link (---)
 hrP :: Parser Block
