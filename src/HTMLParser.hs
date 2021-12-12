@@ -37,7 +37,7 @@ closingTag tag = string $ '<' : '/' : tag ++ ">"
 
 -- Parser between tags
 container :: Parser b -> Parser c -> Parser a -> Parser a
-container open close p = open *> p <* close
+container open close p = try open *> p <* try close
 -- TODO check the two are the same
 -- container tag p = if x == tag && z == tag then y else Left "no parses" where
 --                 (x,y,z) = (,,) <$> openingTag
@@ -113,18 +113,14 @@ hLinkP =  flip Link <$> openingWithAttr "a" "href" <*> many textP <* closingTag 
 hImgP :: Parser Block
 hImgP = Image "alt" <$> openingWithAttr "img" "src"
 
--- parses for a quote block (> quote)
+-- parses for a <blockquote><p>abcde</p><p>fghij</p></blockquote>
 hQuoteP :: Parser Block
-hQuoteP = BlockQuote <$> many1 quoteNewLinesP
-  where
-    quoteNewLinesP :: Parser S.Line
-    quoteNewLinesP = do
-      wsP $ char '>'
-      hLineP
+hQuoteP = BlockQuote <$> simpleContainer "blockquote" (many1 $ simpleContainer "p" hLineP) -- (many $ simpleContainer "p" hLineP)
 
--- parses for a paragraph
+-- parses for a <p></p>
+-- <p>this is fun\n<i>yes</i></p>
 hParagraphP :: Parser Block
-hParagraphP = Paragraph <$> hLineP
+hParagraphP = Paragraph <$> simpleContainer "p" hLineP
 
 -- parses for a code block (```\n code \n```)
 hCodeBlockP :: Parser Block
