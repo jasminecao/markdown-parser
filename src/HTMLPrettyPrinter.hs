@@ -13,13 +13,14 @@ class PP a where
 
 instance PP S.Doc where
   pp (S.Doc bs) = tag "html" $ PP.hcat $ map pp bs
+
 instance PP S.Block where
   pp (S.Heading n l) = tag ("h" ++ show n) (pp l)
   pp (S.Paragraph l) = tag "p" (pp l)
   pp (S.OrderedList (startVal, ls)) =
     tagWithAttrs "ol" [("start", show startVal)] (PP.hcat $ map (tag "li" . pp) ls)
   pp (S.UnorderedList ls) = tag "ul" (PP.hcat $ map (tag "li" . pp) ls)
-  pp (S.Image alt src) = undefined
+  pp (S.Image alt src) = tagWithAttrs "img" [("alt", alt), ("src", src)] mempty
   pp (S.BlockQuote ls) = tag "blockquote" (PP.hcat $ map (tag "p" . pp) ls)
   -- TODO: refactor?
   pp (S.CodeBlock str) = tag "pre" $ tag "code" (PP.text str)
@@ -36,7 +37,7 @@ instance PP S.Text where
   pp (S.Strikethrough s) = tag "del" $ PP.text s
   pp (S.InlineCode s) = tag "code" $ PP.text s
   pp (S.Link l href) = tagWithAttrs "a" [("href", href)] $ PP.hcat (map pp l)
-  pp (S.Normal s) = tag "span" $ PP.text s
+  pp (S.Normal s) = PP.text s
 
 tag :: String -> PP.Doc -> PP.Doc
 tag t = tagWithAttrs t []
@@ -46,6 +47,7 @@ tagWithAttrs t attrs context =
   PP.text "<" <> PP.text t
     <> tagWithAttrInner t attrs context
   where
+    tagWithAttrInner "img" [] context = PP.text ">"
     tagWithAttrInner t [] context =
       PP.text ">"
         <> context

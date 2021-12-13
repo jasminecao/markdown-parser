@@ -2,8 +2,8 @@ module HTMLParser where
 
 import qualified Control.Monad as Monad
 import Data.Char (isSpace)
-import Syntax (Block (..), Doc (Doc), Line, Text (..))
 import Data.Functor (($>))
+import Syntax (Block (..), Doc (Doc), Line, Text (..))
 import qualified Syntax as S
 import Text.Parsec.Token
 import Text.ParserCombinators.Parsec
@@ -16,24 +16,6 @@ p3 parser str = case parse parser "" str of
 
 htmlReserved :: Char -> Bool
 htmlReserved c = c `elem` ['/', '<', '>']
-
-htmlTags :: [String]
-htmlTags =
-      [ "html",
-        "blockquote", "code", "pre", "img",
-        "h1", "h2", "h3", "h4", "h5", "h6", "hr", "br",
-        "ol", "ul", "li",
-        "p", "i", "b", "a", "del",
-        "table", "tbody", "thead", "tfoot",  "tbody", "td", "th", "tr"
-      ]
-
-text :: Parser String
-text = (:) <$> satisfy (not . htmlReserved) <*> manyTill anyChar -- fake many1Till
-    (choice $
-        [try (openingTag tag) | tag <- htmlTags] ++
-        [try (closingTag tag) | tag <- htmlTags] ++
-        [eof $> ""]
-    ) --(choice (map (try . openingTag) htmlTags))
 
 quotesP :: Parser String
 quotesP = betweenP "\""
@@ -53,6 +35,7 @@ closingTag tag = string $ '<' : '/' : tag ++ ">"
 -- Parser between tags
 container :: Parser b -> Parser c -> Parser a -> Parser a
 container open close p = try open *> p <* try close
+
 -- TODO check the two are the same
 -- container tag p = if x == tag && z == tag then y else Left "no parses" where
 --                 (x,y,z) = (,,) <$> openingTag
@@ -64,6 +47,9 @@ simpleContainer tag = container (openingTag tag) (closingTag tag)
 
 simpleContainerTest :: String -> Parser String
 simpleContainerTest tag = try (openingTag tag) *> manyTill anyChar (try (closingTag tag))
+
+simpleContainerTest2 :: String -> Parser a -> Parser [a]
+simpleContainerTest2 tag p = try (openingTag tag) *> manyTill p (try (closingTag tag))
 
 parseHtml :: String -> Either ParseError Doc
 parseHtml = parse htmlP ""
@@ -89,13 +75,13 @@ hBlockP = tryBlockP <* many (string "\n")
 -- parses headings
 -- <h1>HEADING</h1> <a href=\"url\">ONE</a></h1>
 hHeadingP :: Parser Block
-hHeadingP = choice [checkHeader i | i <- [1..6] ]
-    where
-      checkHeader :: Int -> Parser Block
-      checkHeader i = try $ Heading i <$> simpleContainer ("h" ++ show i) hLineP
+hHeadingP = choice [checkHeader i | i <- [1 .. 6]]
+  where
+    checkHeader :: Int -> Parser Block
+    checkHeader i = try $ Heading i . S.Line <$> simpleContainerTest2 ("h" ++ show i) hTextP
 
 hLiP :: Parser String
-hLiP = simpleContainer "li" text
+hLiP = simpleContainerTest "li"
 
 -- TODO: figure out how to implement sublists?
 -- parses for an unordered list (- list item)
@@ -125,12 +111,15 @@ hOListP =
 
 -- parses for a link <a href=\"url\">stuff</a>
 hLinkP :: Parser Text
-hLinkP =  flip Link <$> openingWithAttr "a" "href" <*> many textP <* closingTag "a"
+hLinkP = flip Link <$> openingWithAttr "a" "href" <*> many hTextP <* closingTag "a"
 
 -- parses for a <img src=\"url\">
 -- TODO empty alt?
 hImgP :: Parser Block
-hImgP = Image "alt" <$> openingWithAttr "img" "src"
+hImgP = Image <$> (wsP (string "<img") *> wsP (attr "alt")) <*> attr "src" <* string ">"
+
+-- wsP (string ('<' : tag))
+--Image "alt" <$> openingWithAttr "img" "src"
 
 -- parses for a <blockquote><p>abcde</p><p>fghij</p></blockquote>
 hQuoteP :: Parser Block
@@ -141,7 +130,7 @@ hQuoteP = BlockQuote <$> simpleContainer "blockquote" (many1 $ simpleContainer "
 hParagraphP :: Parser Block
 hParagraphP = Paragraph <$> simpleContainer "p" hLineP
 
--- parses for a code block 
+-- parses for a code block
 -- <pre><code>f :: a -> b\n</code></pre>
 hCodeBlockP :: Parser Block
 hCodeBlockP = CodeBlock <$> simpleContainer "pre" (simpleContainerTest "code")
@@ -156,11 +145,11 @@ hBrP = (try (openingTag "br") <|> string "<br/>") $> Br
 
 -- parses a line of text to handle style (bold, italics, inline code, etc)
 hLineP :: Parser S.Line
-hLineP = S.Line <$> many textP
+hLineP = S.Line <$> many1 hTextP
 
 -- parses for a text string
-textP :: Parser Text
-textP =
+hTextP :: Parser Text
+hTextP =
   try hLinkP
     <|> try hItalicP
     <|> try hBoldP
@@ -170,7 +159,7 @@ textP =
 
 -- parses for text between a beginning and end string
 betweenP :: String -> Parser String
-betweenP str = between (string str) (string str) $ many1 (noneOf (str ++ "\n"))
+betweenP str = between (string str) (string str) $ many (noneOf (str ++ "\n"))
 
 -- parses for a bold string (**text**)
 hBoldP :: Parser Text
@@ -190,12 +179,24 @@ hInlineCodeP = InlineCode <$> simpleContainerTest "code"
 
 -- parses for a normal, undecorated string
 hNormalP :: Parser Text
-hNormalP = Normal <$> text
+hNormalP =
+  Normal
+    <$> ( try
+            ( many1Till
+                anyChar
+                ( choice $
+                    [try $ lookAhead (openingTag tag) | tag <- htmlTags]
+                      ++ [try $ lookAhead (closingTag tag) | tag <- htmlTags]
+                )
+            )
+            <|> many1 anyChar
+        )
 
--- parses for a string until a reserved character is found
--- TODO: add this to syntax?
-stringP :: Parser String
-stringP = many1 $ noneOf ['*', '~', '`', '>', '_', '[', ']', '\n']
+many1Till :: Parser a -> Parser b -> Parser [a]
+many1Till p end = do
+  x <- p
+  xs <- manyTill p end
+  return (x : xs)
 
 -- removes trailing whitespace
 wsP :: Parser a -> Parser a
@@ -208,3 +209,37 @@ newLineChar = string "\n"
 -- parses for an integer
 int :: Parser Int
 int = read <$> many1 digit
+
+-- TODO: move to Syntax.hs?
+htmlTags :: [String]
+htmlTags =
+  [ "html",
+    "blockquote",
+    "code",
+    "pre",
+    "img",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "hr",
+    "br",
+    "ol",
+    "ul",
+    "li",
+    "p",
+    "i",
+    "b",
+    "a",
+    "del",
+    "table",
+    "tbody",
+    "thead",
+    "tfoot",
+    "tbody",
+    "td",
+    "th",
+    "tr"
+  ]

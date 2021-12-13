@@ -43,6 +43,6 @@ data Text
   | Italic String
   | Strikethrough String
   | InlineCode String
-  | Link [Text] String -- a
+  | Link [Text] String -- text, url
   | Normal String
   deriving (Eq, Show)
