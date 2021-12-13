@@ -83,7 +83,7 @@ openingWithAttr tag name = wsP (string ('<' : tag)) *> wsP (attr name) <* string
 
 -- parses for a link <a href=\"url\">stuff</a>
 hLinkP :: Parser Text
-hLinkP = (flip Link <$> openingWithAttr "a" "href") <*> many1 (try hTextP)
+hLinkP = (flip Link <$> openingWithAttr "a" "href") <*> manyTill hTextP (closingTag "a")
 
 -- parses for a <img src=\"url\">
 hImgP :: Parser Block
