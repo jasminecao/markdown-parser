@@ -309,6 +309,8 @@ test_hHeadingP =
         p hHeadingP "<h7>Heading 7</h7>" ~?= Left "No parses",
         p hHeadingP "Heading 1\n" ~?= Left "No parses",
         p hHeadingP "<h2><h1>Heading 2</h2>" ~?= Right (Heading 2 (S.Line [Normal "<h1>Heading 2"]))
+        -- p hHeadingP "<h1>HEADING<a href=\"url\">ONE</a></h1>" ~?= 
+        --   Right (Heading 1 (S.Line [Normal "HEADING ", Link ["ONE"] "url"]))
       ]
 
 test_hUlListP =

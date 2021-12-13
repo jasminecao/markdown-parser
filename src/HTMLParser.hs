@@ -3,7 +3,7 @@ module HTMLParser where
 import qualified Control.Monad as Monad
 import Data.Char (isSpace)
 import Data.Functor (($>))
-import Syntax (Block (..), Doc (Doc), Line, Text (..))
+import Syntax (Block (..), Doc (Doc), Line, Text (..), TableType (..))
 import qualified Syntax as S
 import Text.Parsec.Token
 import Text.ParserCombinators.Parsec
@@ -21,13 +21,7 @@ openingTag :: String -> Parser String
 openingTag tag = string $ '<' : tag ++ ">"
 
 closingTag :: String -> Parser String
-closingTag tag = string $ '<' : '/' : tag ++ ">"
-
-attr :: String -> Parser String
-attr name = string name *> string "=" *> quotesP
-
-openingWithAttr :: String -> String -> Parser String
-openingWithAttr tag name = wsP (string ('<' : tag)) *> attr name <* string ">"
+closingTag tag = string $ "</" ++ tag ++ ">"
 
 betweenTag :: String -> Parser a -> Parser a
 betweenTag tag p = try (openingTag tag) *> p <* try (closingTag tag)
@@ -62,7 +56,7 @@ hBlockP =
     <|> hParagraphP
 
 -- parses headings
--- <h1>HEADING</h1> <a href=\"url\">ONE</a></h1>
+-- <h1>HEADING <a href=\"url\">ONE</a></h1>
 hHeadingP :: Parser Block
 hHeadingP = choice [checkHeader i | i <- [1 .. 6]]
   where
@@ -81,9 +75,15 @@ hUlListP = UnorderedList <$> container "ul" hLiP
 hOlListP :: Parser Block
 hOlListP = OrderedList <$> ((,) <$> (read <$> openingWithAttr "ol" "start") <*> manyTill hLiP (try (closingTag "ol")))
 
+attr :: String -> Parser String
+attr name = string name *> string "=" *> quotesP
+
+openingWithAttr :: String -> String -> Parser String
+openingWithAttr tag name = wsP (string ('<' : tag)) *> wsP (attr name) <* string ">"
+
 -- parses for a link <a href=\"url\">stuff</a>
 hLinkP :: Parser Text
-hLinkP = flip Link <$> openingWithAttr "a" "href" <*> many hTextP <* closingTag "a"
+hLinkP = (flip Link <$> openingWithAttr "a" "href") <*> many1 (try hTextP)
 
 -- parses for a <img src=\"url\">
 hImgP :: Parser Block
@@ -112,6 +112,21 @@ hBrP = (try (openingTag "br") <|> string "<br/>") $> Br
 -- parses a line of text to handle style (bold, italics, inline code, etc)
 hLineP :: Parser S.Line
 hLineP = S.Line <$> many1 hTextP
+
+hTableP :: Parser Block 
+hTableP = Table <$> hTableHeadP <*> hTableBodyP
+
+hTableHeadP :: Parser TableType 
+hTableHeadP = TableHead <$> container "tr" hTableCellP
+
+hTableBodyP :: Parser TableType 
+hTableBodyP = TableBody <$> container "tr" hTableCellP
+
+hTableRowP :: Parser TableType 
+hTableRowP = TableRow <$> container "tr" hTableCellP
+
+hTableCellP :: Parser TableType 
+hTableCellP = TableCell <$> lineContainer "td"
 
 -- parses for a text string
 hTextP :: Parser Text

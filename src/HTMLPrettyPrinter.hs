@@ -1,6 +1,6 @@
 module HTMLPrettyPrinter where
 
-import Syntax (Block (..), Doc (Doc), Line, Text (..))
+import Syntax (Block (..), Doc (Doc), Line, Text (..), TableType (..))
 import qualified Syntax as S
 import Text.PrettyPrint hiding (braces, parens, sep, (<>))
 import qualified Text.PrettyPrint as PP
@@ -26,7 +26,7 @@ instance PP S.Block where
   pp (S.CodeBlock str) = tag "pre" $ tag "code" (PP.text str)
   pp S.Hr = PP.text "<hr>"
   pp S.Br = PP.text "<br>"
-  pp (S.Table ls) = undefined
+  pp (S.Table thead tbody) = tag "table" $ PP.hcat [pp thead, pp tbody]
 
 instance PP S.Line where
   pp (S.Line ts) = PP.hcat (map pp ts)
@@ -38,6 +38,12 @@ instance PP S.Text where
   pp (S.InlineCode s) = tag "code" $ PP.text s
   pp (S.Link l href) = tagWithAttrs "a" [("href", href)] $ PP.hcat (map pp l)
   pp (S.Normal s) = PP.text s
+
+instance PP S.TableType where
+  pp (TableHead trs) = tag "thead" $ PP.hcat (map pp trs)
+  pp (TableBody trs) = tag "tbody" $ PP.hcat (map pp trs)
+  pp (TableRow tds) = tag "tr" $ PP.hcat (map pp tds)
+  pp (TableCell td) = tag "td" $ pp td
 
 tag :: String -> PP.Doc -> PP.Doc
 tag t = tagWithAttrs t []

@@ -32,7 +32,7 @@ instance PP S.Block where
   pp (S.CodeBlock str) = PP.text "```\n" <> PP.text str <> PP.text "```"
   pp S.Hr = PP.text "---\n"
   pp S.Br = PP.text "\n\n"
-  pp (S.Table ls) = undefined
+  pp (S.Table thead tbody) = undefined
 
 instance PP S.Line where
   pp (S.Line ts) = PP.hcat (map pp ts) <> PP.text "\n"

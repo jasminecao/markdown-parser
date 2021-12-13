@@ -17,7 +17,7 @@ data Block
   | CodeBlock String
   | Hr -- empty
   | Br -- empty
-  | Table TableType
+  | Table TableType TableType -- thead, tbody
   deriving (Eq, Show)
 
 data TableType
