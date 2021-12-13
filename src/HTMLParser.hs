@@ -62,7 +62,7 @@ hBlockP = tryBlockP <* many (string "\n")
         <|> try hBrP
         <|> try hHrP
         <|> try hHeadingP
-        <|> try hUListP
+        <|> try hUlListP
         <|> try hOListP
         <|> try hQuoteP
         <|> try hCodeBlockP
@@ -76,21 +76,13 @@ hHeadingP = choice [checkHeader i | i <- [1 .. 6]]
     checkHeader :: Int -> Parser Block
     checkHeader i = try $ Heading i . S.Line <$> simpleContainerTest ("h" ++ show i) hTextP
 
-hLiP :: Parser String
-hLiP = simpleContainerTest "li" anyChar
+hLiP :: Parser S.Line
+hLiP = S.Line <$> simpleContainerTest "li" hTextP
 
 -- TODO: figure out how to implement sublists?
 -- parses for an unordered list (- list item)
-hUListP :: Parser Block
-hUListP =
-  UnorderedList <$> do
-    wsP $ string "- " <|> string "*" -- first hyphen must have at least one space after
-    firstItem <- hLineP
-    remainingItems <- many $
-      do
-        wsP $ string "-" <|> string "*"
-        hLineP
-    return $ firstItem : remainingItems
+hUlListP :: Parser Block
+hUlListP = UnorderedList <$> simpleContainerTest "ul" hLiP
 
 -- parses for an ordered list (1. list item)
 hOListP :: Parser Block

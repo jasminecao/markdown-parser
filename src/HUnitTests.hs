@@ -313,16 +313,14 @@ test_hHeadingP =
         p hHeadingP "<h2><h1>Heading 2</h2>" ~?= Right (Heading 2 (S.Line [Normal "<h1>Heading 2"]))
       ]
 
--- test_ulListP =
---   "unordered list"
---     ~: TestList
---       [ p ulListP "-1\n" ~?= Left "No parses",
---         p ulListP "- item 1\n" ~?= Right (UnorderedList [S.Line [Normal "item 1"]]),
---         p ulListP "- item 1\ndontparsethis" ~?= Right (UnorderedList [S.Line [Normal "item 1"]]),
---         p ulListP "- item 1\n- item 2\n" ~?= Right (UnorderedList [S.Line [Normal "item 1"], S.Line [Normal "item 2"]]),
---         p ulListP "- item 1\n-item 2\n" ~?= Right (UnorderedList [S.Line [Normal "item 1"], S.Line [Normal "item 2"]]),
---         p ulListP "* item 1\n* item 2\n" ~?= Right (UnorderedList [S.Line [Normal "item 1"], S.Line [Normal "item 2"]])
---       ]
+test_hUlListP =
+  "unordered list"
+    ~: TestList
+      [ p hUlListP "<ul>1</ul>" ~?= Left "No parses",
+        p hUlListP "<ul><li>item 1</li></ul>" ~?= Right (UnorderedList [S.Line [Normal "item 1"]]),
+        p hUlListP "<ul><li>item 1</li></ul>dontparsethis" ~?= Right (UnorderedList [S.Line [Normal "item 1"]]),
+        p hUlListP "<ul><li>item 1</li><li>item 2</li></ul>" ~?= Right (UnorderedList [S.Line [Normal "item 1"], S.Line [Normal "item 2"]])
+      ]
 
 -- test_olListP =
 --   "ordered list"
@@ -374,16 +372,14 @@ test_hCodeBlockP =
             (CodeBlock "a line\nanother line\n")
       ]
 
--- test_brPHrP =
---   "br and hr"
---     ~: TestList
---       [ p hrP "--" ~?= Left "No parses",
---         p hrP "---" ~?= Right Hr,
---         p hrP "--------" ~?= Right Hr,
---         p brP "\n\n" ~?= Right Br,
---         p brP "" ~?= Left "No parses",
---         p brP " " ~?= Left "No parses"
---       ]
+test_hBrPhHrP =
+  "br and hr"
+    ~: TestList
+      [ p hHrP "<hr/>" ~?= Right Hr,
+        p hHrP "<hr>" ~?= Right Hr,
+        p hBrP "<br/>" ~?= Right Br,
+        p hBrP "<br>" ~?= Right Br
+      ]
 
 -- test_tableP =
 --   "table"
@@ -411,7 +407,9 @@ htmlTests =
       test_hImgP,
       test_hBlockQuoteP,
       test_hParagraphP,
-      test_hCodeBlockP
+      test_hCodeBlockP,
+      test_hBrPhHrP,
+      test_hUlListP
     ]
 
 test_all = do
