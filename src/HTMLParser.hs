@@ -52,7 +52,7 @@ parseHtml :: String -> Either ParseError Doc
 parseHtml = parse htmlP ""
 
 htmlP :: Parser Doc
-htmlP = Doc <$> many1 hBlockP
+htmlP = Doc <$> simpleContainerTest "html" hBlockP
 
 hBlockP :: Parser Block
 hBlockP = tryBlockP <* many (string "\n")

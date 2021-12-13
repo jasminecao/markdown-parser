@@ -381,12 +381,21 @@ test_hBrPhHrP =
 --     ~: TestList
 --       []
 
--- test_blockP =
---   "parsing block"
---     ~: TestList
---       [ p blockP "# Heading 1 `code`\n `code`"
---           ~?= Right (Heading 1 (S.Line [Normal "Heading 1 ", InlineCode "code"]))
---       ]
+test_hBlockP =
+  "parsing block"
+    ~: TestList
+      [ p hBlockP "<h1>Heading 1<code>code</code></h1>"
+          ~?= Right (Heading 1 (S.Line [Normal "Heading 1", InlineCode "code"]))
+      ]
+
+test_hHtmlP =
+  "html"
+    ~: TestList
+      [ p htmlP "<html><h1>Heading 1</h1><p><i>italics</i></p></html>"
+          ~?= Right
+            ( Doc [Heading 1 (S.Line [Normal "Heading 1"]), Paragraph (S.Line [Italic "italics"])]
+            )
+      ]
 
 htmlTests =
   TestList
@@ -405,7 +414,9 @@ htmlTests =
       test_hCodeBlockP,
       test_hBrPhHrP,
       test_hUlListP,
-      test_hOlListP
+      test_hOlListP,
+      test_hBlockP,
+      test_hHtmlP
     ]
 
 test_all = do
