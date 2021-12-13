@@ -24,13 +24,14 @@ htmlTags =
         "h1", "h2", "h3", "h4", "h5", "h6", "hr", "br",
         "ol", "ul", "li",
         "p", "i", "b", "a", "del",
-        "table", "tbody", "thead", "tfoot",  "tbody", "td", "th", "tr"
+        "table", "tbody", "thead", "tfoot", "tbody", "td", "th", "tr"
       ]
 
+-- TODO IT'S EATING TOO MUCH
 text :: Parser String
 text = (:) <$> satisfy (not . htmlReserved) <*> manyTill anyChar -- fake many1Till
     (choice $
-        [try (openingTag tag) | tag <- htmlTags] ++
+        [try (string ('<' : tag) *> manyTill anyChar (string ">")) | tag <- htmlTags] ++
         [try (closingTag tag) | tag <- htmlTags] ++
         [eof $> ""]
     ) --(choice (map (try . openingTag) htmlTags))
@@ -69,7 +70,7 @@ parseHtml :: String -> Either ParseError Doc
 parseHtml = parse htmlP ""
 
 htmlP :: Parser Doc
-htmlP = Doc <$> many1 hBlockP
+htmlP = Doc <$> simpleContainer "html" (many1 hBlockP)
 
 -- TODO: add end of line check (\n)
 hBlockP :: Parser Block
@@ -125,7 +126,7 @@ hOListP =
 
 -- parses for a link <a href=\"url\">stuff</a>
 hLinkP :: Parser Text
-hLinkP =  flip Link <$> openingWithAttr "a" "href" <*> many textP <* closingTag "a"
+hLinkP =  flip Link <$> openingWithAttr "a" "href" <*> many hTextP <* closingTag "a"
 
 -- parses for a <img src=\"url\">
 -- TODO empty alt?
@@ -156,11 +157,11 @@ hBrP = (try (openingTag "br") <|> string "<br/>") $> Br
 
 -- parses a line of text to handle style (bold, italics, inline code, etc)
 hLineP :: Parser S.Line
-hLineP = S.Line <$> many textP
+hLineP = S.Line <$> many hTextP
 
 -- parses for a text string
-textP :: Parser Text
-textP =
+hTextP :: Parser Text
+hTextP =
   try hLinkP
     <|> try hItalicP
     <|> try hBoldP
