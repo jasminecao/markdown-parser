@@ -14,14 +14,14 @@ p3 parser str = case parse parser "" str of
   Left err -> Left "No parses"
   Right x -> Right x
 
-htmlReserved :: Char -> Bool
-htmlReserved c = c `elem` ['/', '<', '>']
-
 quotesP :: Parser String
 quotesP = betweenP "\""
 
 openingTag :: String -> Parser String
 openingTag tag = string $ '<' : tag ++ ">"
+
+closingTag :: String -> Parser String
+closingTag tag = string $ '<' : '/' : tag ++ ">"
 
 attr :: String -> Parser String
 attr name = string name *> string "=" *> quotesP
@@ -29,44 +29,37 @@ attr name = string name *> string "=" *> quotesP
 openingWithAttr :: String -> String -> Parser String
 openingWithAttr tag name = wsP (string ('<' : tag)) *> attr name <* string ">"
 
-closingTag :: String -> Parser String
-closingTag tag = string $ '<' : '/' : tag ++ ">"
+betweenTag :: String -> Parser a -> Parser a
+betweenTag tag p = try (openingTag tag) *> p <* try (closingTag tag)
 
--- Parser between tags
-container :: Parser b -> Parser c -> Parser a -> Parser a
-container open close p = try open *> p <* try close
+-- parses p until closing tag is found
+container :: String -> Parser a -> Parser [a]
+container tag p = try (openingTag tag) *> manyTill p (try (closingTag tag))
 
--- TODO check the two are the same
--- container tag p = if x == tag && z == tag then y else Left "no parses" where
---                 (x,y,z) = (,,) <$> openingTag
---                             <*> p
---                             <*> closingTag
+-- parses a line between `tag`
+lineContainer :: String -> Parser S.Line
+lineContainer tag = S.Line <$> container tag hTextP
 
-simpleContainer :: String -> Parser a -> Parser a
-simpleContainer tag = container (openingTag tag) (closingTag tag)
-
-simpleContainerTest :: String -> Parser a -> Parser [a]
-simpleContainerTest tag p = try (openingTag tag) *> manyTill p (try (closingTag tag))
+textContainer :: String -> Parser String
+textContainer tag = container tag anyChar
 
 parseHtml :: String -> Either ParseError Doc
 parseHtml = parse htmlP ""
 
 htmlP :: Parser Doc
-htmlP = Doc <$> simpleContainerTest "html" hBlockP
+htmlP = Doc <$> container "html" hBlockP
 
 hBlockP :: Parser Block
-hBlockP = tryBlockP <* many (string "\n")
-  where
-    tryBlockP =
-      try hImgP
-        <|> try hBrP
-        <|> try hHrP
-        <|> try hHeadingP
-        <|> try hUlListP
-        <|> try hOlListP
-        <|> try hQuoteP
-        <|> try hCodeBlockP
-        <|> hParagraphP
+hBlockP =
+  try hImgP
+    <|> try hBrP
+    <|> try hHrP
+    <|> try hHeadingP
+    <|> try hUlListP
+    <|> try hOlListP
+    <|> try hQuoteP
+    <|> try hCodeBlockP
+    <|> hParagraphP
 
 -- parses headings
 -- <h1>HEADING</h1> <a href=\"url\">ONE</a></h1>
@@ -74,55 +67,39 @@ hHeadingP :: Parser Block
 hHeadingP = choice [checkHeader i | i <- [1 .. 6]]
   where
     checkHeader :: Int -> Parser Block
-    checkHeader i = try $ Heading i . S.Line <$> simpleContainerTest ("h" ++ show i) hTextP
+    checkHeader i = try $ Heading i <$> lineContainer ("h" ++ show i)
 
 hLiP :: Parser S.Line
-hLiP = S.Line <$> simpleContainerTest "li" hTextP
+hLiP = lineContainer "li"
 
 -- TODO: figure out how to implement sublists?
 -- parses for an unordered list (- list item)
 hUlListP :: Parser Block
-hUlListP = UnorderedList <$> simpleContainerTest "ul" hLiP
+hUlListP = UnorderedList <$> container "ul" hLiP
 
 -- parses for an ordered list (1. list item)
 hOlListP :: Parser Block
 hOlListP = OrderedList <$> ((,) <$> (read <$> openingWithAttr "ol" "start") <*> manyTill hLiP (try (closingTag "ol")))
-
--- OrderedList <$> do
---   startVal <- int
---   wsP (string ". ")
---   firstItem <- hLineP
---   remainingItems <- many $
---     do
---       int <* wsP (string ".")
---       hLineP
---   return (startVal, firstItem : remainingItems)
 
 -- parses for a link <a href=\"url\">stuff</a>
 hLinkP :: Parser Text
 hLinkP = flip Link <$> openingWithAttr "a" "href" <*> many hTextP <* closingTag "a"
 
 -- parses for a <img src=\"url\">
--- TODO empty alt?
 hImgP :: Parser Block
 hImgP = Image <$> (wsP (string "<img") *> wsP (attr "alt")) <*> attr "src" <* string ">"
 
--- wsP (string ('<' : tag))
---Image "alt" <$> openingWithAttr "img" "src"
-
 -- parses for a <blockquote><p>abcde</p><p>fghij</p></blockquote>
 hQuoteP :: Parser Block
-hQuoteP = BlockQuote <$> simpleContainerTest "blockquote" (S.Line <$> simpleContainerTest "p" hTextP)
+hQuoteP = BlockQuote <$> container "blockquote" (S.Line <$> container "p" hTextP)
 
 -- parses for a <p></p>
--- <p>this is fun\n<i>yes</i></p>
 hParagraphP :: Parser Block
-hParagraphP = Paragraph . S.Line <$> simpleContainerTest "p" hTextP
+hParagraphP = Paragraph <$> lineContainer "p"
 
 -- parses for a code block
--- <pre><code>f :: a -> b\n</code></pre>
 hCodeBlockP :: Parser Block
-hCodeBlockP = CodeBlock <$> simpleContainer "pre" (simpleContainerTest "code" anyChar)
+hCodeBlockP = CodeBlock <$> betweenTag "pre" (container "code" anyChar)
 
 -- parses for a horizontal line <hr> or <hr/>
 hHrP :: Parser Block
@@ -152,19 +129,19 @@ betweenP str = between (string str) (string str) $ many (noneOf (str ++ "\n"))
 
 -- parses for a bold string (**text**)
 hBoldP :: Parser Text
-hBoldP = Bold <$> simpleContainerTest "b" anyChar
+hBoldP = Bold <$> textContainer "b"
 
 -- parses for an italic string (*text*)
 hItalicP :: Parser Text
-hItalicP = Italic <$> simpleContainerTest "i" anyChar
+hItalicP = Italic <$> textContainer "i"
 
 -- parses for a strike through string (~~text~~)
 hStrikeP :: Parser Text
-hStrikeP = Strikethrough <$> simpleContainerTest "del" anyChar
+hStrikeP = Strikethrough <$> textContainer "del"
 
 -- parses for an inline code string (`text`)
 hInlineCodeP :: Parser Text
-hInlineCodeP = InlineCode <$> simpleContainerTest "code" anyChar
+hInlineCodeP = InlineCode <$> textContainer "code"
 
 -- parses for a normal, undecorated string
 hNormalP :: Parser Text
@@ -190,14 +167,6 @@ many1Till p end = do
 -- removes trailing whitespace
 wsP :: Parser a -> Parser a
 wsP p = p <* many (satisfy isSpace)
-
--- parser to consume \n character
-newLineChar :: Parser String
-newLineChar = string "\n"
-
--- parses for an integer
-int :: Parser Int
-int = read <$> many1 digit
 
 -- TODO: move to Syntax.hs?
 htmlTags :: [String]
