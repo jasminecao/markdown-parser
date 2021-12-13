@@ -15,8 +15,6 @@ p parser str = case parse parser "" str of
   Left err -> Left "No parses"
   Right x -> Right x
 
-{- MARKDOWN TESTS -}
-
 test_boldP =
   "bold"
     ~: TestList
