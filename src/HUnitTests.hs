@@ -345,36 +345,34 @@ test_hImgP =
         p hImgP "<img alt=\"\" src=\"image.png\">" ~?= Right (Image "" "image.png")
       ]
 
--- test_blockQuoteP =
---   "block quote"
---     ~: TestList
---       [ p quoteP "``` ``" ~?= Left "No parses",
---         p quoteP ">hello\n" ~?= Right (BlockQuote [S.Line [Normal "hello"]]),
---         p quoteP ">1\n>2\n" ~?= Right (BlockQuote [S.Line [Normal "1"], S.Line [Normal "2"]]),
---         p quoteP ">1\n>2\n> 3\n" ~?= Right (BlockQuote [S.Line [Normal "1"], S.Line [Normal "2"], S.Line [Normal "3"]])
---       ]
+test_hBlockQuoteP =
+  "block quote"
+    ~: TestList
+      [ p hQuoteP "<blockquote><p>hello</p></blockquote>" ~?= Right (BlockQuote [S.Line [Normal "hello"]]),
+        p hQuoteP "<blockquote><p>1</p><p>2</p></blockquote>" ~?= Right (BlockQuote [S.Line [Normal "1"], S.Line [Normal "2"]]),
+        p hQuoteP "<blockquote><p>1</p><p>2</p><p>3</p></blockquote>" ~?= Right (BlockQuote [S.Line [Normal "1"], S.Line [Normal "2"], S.Line [Normal "3"]]),
+        p hQuoteP "<blockquote></blockquote>" ~?= Right (BlockQuote [])
+      ]
 
--- test_paragraphP =
---   "paragraph"
---     ~: TestList
---       [ p paragraphP "regular string\n"
---           ~?= Right
---             (Paragraph (S.Line [Normal "regular string"])),
---         p paragraphP "regular string `code` and *italics*\n"
---           ~?= Right (Paragraph (S.Line [Normal "regular string ", InlineCode "code", Normal " and ", Italic "italics"]))
---       ]
+test_hParagraphP =
+  "paragraph"
+    ~: TestList
+      [ p hParagraphP "<p>regular string</p>"
+          ~?= Right
+            (Paragraph (S.Line [Normal "regular string"])),
+        p hParagraphP "<p>regular string <code>code</code> and <i>italics</i></p>"
+          ~?= Right (Paragraph (S.Line [Normal "regular string ", InlineCode "code", Normal " and ", Italic "italics"]))
+      ]
 
--- test_codeBlockP =
---   "code block"
---     ~: TestList
---       [ p codeBlockP "``` ``\n" ~?= Left "No parses",
---         p codeBlockP "``````\n" ~?= Left "No parses",
---         p codeBlockP "```\n```\n" ~?= Right (CodeBlock ""),
---         p codeBlockP "```\nhello!\n```\n" ~?= Right (CodeBlock "hello!\n"),
---         p codeBlockP "```\na line\nanother line\n```\n"
---           ~?= Right
---             (CodeBlock "a line\nanother line\n")
---       ]
+test_hCodeBlockP =
+  "code block"
+    ~: TestList
+      [ p hCodeBlockP "<pre><code></code></pre>" ~?= Right (CodeBlock ""),
+        p hCodeBlockP "<pre><code>hello!\n</code></pre>" ~?= Right (CodeBlock "hello!\n"),
+        p hCodeBlockP "<pre><code>a line\nanother line\n</code></pre>"
+          ~?= Right
+            (CodeBlock "a line\nanother line\n")
+      ]
 
 -- test_brPHrP =
 --   "br and hr"
@@ -410,7 +408,10 @@ htmlTests =
       test_hTextP,
       test_hLineP,
       test_hHeadingP,
-      test_hImgP
+      test_hImgP,
+      test_hBlockQuoteP,
+      test_hParagraphP,
+      test_hCodeBlockP
     ]
 
 test_all = do

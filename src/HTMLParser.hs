@@ -45,11 +45,8 @@ container open close p = try open *> p <* try close
 simpleContainer :: String -> Parser a -> Parser a
 simpleContainer tag = container (openingTag tag) (closingTag tag)
 
-simpleContainerTest :: String -> Parser String
-simpleContainerTest tag = try (openingTag tag) *> manyTill anyChar (try (closingTag tag))
-
-simpleContainerTest2 :: String -> Parser a -> Parser [a]
-simpleContainerTest2 tag p = try (openingTag tag) *> manyTill p (try (closingTag tag))
+simpleContainerTest :: String -> Parser a -> Parser [a]
+simpleContainerTest tag p = try (openingTag tag) *> manyTill p (try (closingTag tag))
 
 parseHtml :: String -> Either ParseError Doc
 parseHtml = parse htmlP ""
@@ -57,7 +54,6 @@ parseHtml = parse htmlP ""
 htmlP :: Parser Doc
 htmlP = Doc <$> many1 hBlockP
 
--- TODO: add end of line check (\n)
 hBlockP :: Parser Block
 hBlockP = tryBlockP <* many (string "\n")
   where
@@ -78,10 +74,10 @@ hHeadingP :: Parser Block
 hHeadingP = choice [checkHeader i | i <- [1 .. 6]]
   where
     checkHeader :: Int -> Parser Block
-    checkHeader i = try $ Heading i . S.Line <$> simpleContainerTest2 ("h" ++ show i) hTextP
+    checkHeader i = try $ Heading i . S.Line <$> simpleContainerTest ("h" ++ show i) hTextP
 
 hLiP :: Parser String
-hLiP = simpleContainerTest "li"
+hLiP = simpleContainerTest "li" anyChar
 
 -- TODO: figure out how to implement sublists?
 -- parses for an unordered list (- list item)
@@ -123,17 +119,17 @@ hImgP = Image <$> (wsP (string "<img") *> wsP (attr "alt")) <*> attr "src" <* st
 
 -- parses for a <blockquote><p>abcde</p><p>fghij</p></blockquote>
 hQuoteP :: Parser Block
-hQuoteP = BlockQuote <$> simpleContainer "blockquote" (many1 $ simpleContainer "p" hLineP)
+hQuoteP = BlockQuote <$> simpleContainerTest "blockquote" (S.Line <$> simpleContainerTest "p" hTextP)
 
 -- parses for a <p></p>
 -- <p>this is fun\n<i>yes</i></p>
 hParagraphP :: Parser Block
-hParagraphP = Paragraph <$> simpleContainer "p" hLineP
+hParagraphP = Paragraph . S.Line <$> simpleContainerTest "p" hTextP
 
 -- parses for a code block
 -- <pre><code>f :: a -> b\n</code></pre>
 hCodeBlockP :: Parser Block
-hCodeBlockP = CodeBlock <$> simpleContainer "pre" (simpleContainerTest "code")
+hCodeBlockP = CodeBlock <$> simpleContainer "pre" (simpleContainerTest "code" anyChar)
 
 -- parses for a horizontal line <hr> or <hr/>
 hHrP :: Parser Block
@@ -163,19 +159,19 @@ betweenP str = between (string str) (string str) $ many (noneOf (str ++ "\n"))
 
 -- parses for a bold string (**text**)
 hBoldP :: Parser Text
-hBoldP = Bold <$> simpleContainerTest "b"
+hBoldP = Bold <$> simpleContainerTest "b" anyChar
 
 -- parses for an italic string (*text*)
 hItalicP :: Parser Text
-hItalicP = Italic <$> simpleContainerTest "i"
+hItalicP = Italic <$> simpleContainerTest "i" anyChar
 
 -- parses for a strike through string (~~text~~)
 hStrikeP :: Parser Text
-hStrikeP = Strikethrough <$> simpleContainerTest "del"
+hStrikeP = Strikethrough <$> simpleContainerTest "del" anyChar
 
 -- parses for an inline code string (`text`)
 hInlineCodeP :: Parser Text
-hInlineCodeP = InlineCode <$> simpleContainerTest "code"
+hInlineCodeP = InlineCode <$> simpleContainerTest "code" anyChar
 
 -- parses for a normal, undecorated string
 hNormalP :: Parser Text
