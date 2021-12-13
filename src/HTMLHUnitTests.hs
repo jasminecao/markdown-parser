@@ -51,7 +51,9 @@ test_hInlineCodeP =
 test_hNormalP =
   "normal text"
     ~: TestList
-      [ p hNormalP "regular text" ~?= Right (Normal "regular text")
+      [ p hNormalP "regular text" ~?= Right (Normal "regular text"),
+        p hNormalP "special>char" ~?= Right (Normal "special>char"),
+        p hNormalP "hello<p>world" ~?= Right (Normal "hello")
       ]
 
 test_hTextP =
@@ -65,168 +67,148 @@ test_hTextP =
         p hTextP "<code> test this" ~?= Left "No parses"
       ]
 
-{-test_hLineP =
+test_hLineP =
   "line"
     ~: TestList
-      [ p hLineP "line\n" ~?= Right (S.Line [Normal "line"]),
-        p hLineP "`code` line\n" ~?= Right (S.Line [InlineCode "code", Normal " line"]),
-        p hLineP "~~strike~~ `code` **bold** *italic* line\n"
+      [ p hLineP "line" ~?= Right (S.Line [Normal "line"]),
+        p hLineP "<code>code</code> line" ~?= Right (S.Line [InlineCode "code", Normal " line"]),
+        p hLineP "<del>strike</del> <code>code</code> <b>bold</b> <i>italic</i> line"
           ~?= Right (S.Line [Strikethrough "strike", Normal " ", InlineCode "code", Normal " ", Bold "bold", Normal " ", Italic "italic", Normal " line"]),
         -- TODO: perhaps change this so it doesn't output 2 normals?
-        p hLineP "~~strike~~ `code` *line\n"
-          ~?= Right (S.Line [Strikethrough "strike", Normal " ", InlineCode "code", Normal " ", Normal "*line"]),
-        p hLineP "`code` **line\nend"
-          ~?= Right (S.Line [InlineCode "code", Normal " ", Normal "**line"]),
-        p hLineP "regular text _not**line\n"
-          ~?= Right (Line [Normal "regular text ", Normal "_not**line"]),
-        p hLineP "``\n" ~?= Right (S.Line [Normal "``"])
+        p hLineP "<del>strike</del> <code>code</code> <i>line"
+          ~?= Right (S.Line [Strikethrough "strike", Normal " ", InlineCode "code", Normal " ", Normal "<i>line"]),
+        p hLineP "<code>code</code> **line"
+          ~?= Right (S.Line [InlineCode "code", Normal " **line"]),
+        p hLineP "regular text <not**line"
+          ~?= Right (Line [Normal "regular text <not**line"]),
+        p hLineP "``\n" ~?= Right (S.Line [Normal "``\n"]),
+        p hLineP "<a>link</a> and normal stuff"
+          ~?= Right (S.Line [Link [Normal "link"] "", Normal " and normal stuff"]),
+        p hLineP "normal stuff and a <a href=\"url\">link</a>"
+          ~?= Right (S.Line [Normal "normal stuff and a ", Link [Normal "link"] "url"])
       ]
 
 test_hHeadingP =
   "heading"
     ~: TestList
-      [ p hHeadingP "# Heading 1\n" ~?= Right (Heading 1 (S.Line [Normal "Heading 1"])),
-        p hHeadingP "#### Heading 4\n" ~?= Right (Heading 4 (S.Line [Normal "Heading 4"])),
-        p hHeadingP "####### Heading 7\n" ~?= Left "No parses",
+      [ p hHeadingP "<h1>Heading 1</h1>" ~?= Right (Heading 1 (S.Line [Normal "Heading 1"])),
+        p hHeadingP "<h4>Heading 4</h4>" ~?= Right (Heading 4 (S.Line [Normal "Heading 4"])),
+        p hHeadingP "<h7>Heading 7</h7>" ~?= Left "No parses",
         p hHeadingP "Heading 1\n" ~?= Left "No parses",
-        p hHeadingP "## # Heading 2\n" ~?= Right (Heading 2 (S.Line [Normal "# Heading 2"]))
+        p hHeadingP "<h2><h1>Heading 2</h2>" ~?= Right (Heading 2 (S.Line [Normal "<h1>Heading 2"])),
+        p hHeadingP "<h1><a href=\"url\">heading link</a></h1>"
+          ~?= Right (Heading 1 (S.Line [Link [Normal "heading link"] "url"])),
+        p hHeadingP "<h1><a href=\"url\">heading link</a> and normal stuff</h1>"
+          ~?= Right (Heading 1 (S.Line [Link [Normal "heading link"] "url", Normal " and normal stuff"])),
+        p hHeadingP "<h1>HEADING<a href=\"url\"> ONE</a></h1>"
+          ~?= Right (Heading 1 (S.Line [Normal "HEADING", Link [Normal " ONE"] "url"]))
       ]
 
-test_hUListP =
+test_hUlListP =
   "unordered list"
     ~: TestList
-      [ p hUListP "-1\n" ~?= Left "No parses",
-        p hUListP "- item 1\n" ~?= Right (UnorderedList [S.Line [Normal "item 1"]]),
-        p hUListP "- item 1\ndontparsethis" ~?= Right (UnorderedList [S.Line [Normal "item 1"]]),
-        p hUListP "- item 1\n- item 2\n" ~?= Right (UnorderedList [S.Line [Normal "item 1"], S.Line [Normal "item 2"]]),
-        p hUListP "- item 1\n-item 2\n" ~?= Right (UnorderedList [S.Line [Normal "item 1"], S.Line [Normal "item 2"]]),
-        p hUListP "* item 1\n* item 2\n" ~?= Right (UnorderedList [S.Line [Normal "item 1"], S.Line [Normal "item 2"]])
+      [ p hUlListP "<ul>1</ul>" ~?= Left "No parses",
+        p hUlListP "<ul><li>item 1</li></ul>" ~?= Right (UnorderedList [S.Line [Normal "item 1"]]),
+        p hUlListP "<ul><li>item 1</li></ul>dontparsethis" ~?= Right (UnorderedList [S.Line [Normal "item 1"]]),
+        p hUlListP "<ul><li>item 1</li><li>item 2</li></ul>" ~?= Right (UnorderedList [S.Line [Normal "item 1"], S.Line [Normal "item 2"]])
       ]
 
-test_hOListP =
+test_hOlListP =
   "ordered list"
     ~: TestList
-      [ p hOListP "1.1" ~?= Left "No parses",
-        p hOListP "1. item 1\n" ~?= Right (OrderedList (1, [S.Line [Normal "item 1"]])),
-        p hOListP "1. item 1\n2. item 2\n" ~?= Right (OrderedList (1, [S.Line [Normal "item 1"], S.Line [Normal "item 2"]])),
-        p hOListP "11. item 1\n2. item 2\n" ~?= Right (OrderedList (11, [S.Line [Normal "item 1"], S.Line [Normal "item 2"]])),
-        p hOListP "1. item 1\n2.item 2\n"
-          ~?= Right
-            ( OrderedList (1, [S.Line [Normal "item 1"], S.Line [Normal "item 2"]])
-            )
-      ]
-
-test_hLinkP =
-  "link"
-    ~: TestList
-      [ p hLinkP "[()]\n" ~?= Left "No parses",
-        p hLinkP "[google](google.com\n" ~?= Left "No parses",
-        p hLinkP "[google]\n(google.com)\n" ~?= Left "No parses",
-        p hLinkP "[google](google.com)\n" ~?= Right (Link [Normal "google"] "google.com"),
-        p hLinkP "[](google.com)\n" ~?= Right (Link [] "google.com"),
-        p hLinkP "[google]()\n" ~?= Right (Link [Normal "google"] "")
+      [ p hOlListP "<ol start=\"1\"><li>item 1</li></ol>" ~?= Right (OrderedList (1, [S.Line [Normal "item 1"]])),
+        p hOlListP "<ol start=\"1\"><li>item 1</li><li>item 2</li></ol>" ~?= Right (OrderedList (1, [S.Line [Normal "item 1"], S.Line [Normal "item 2"]])),
+        p hOlListP "<ol start=\"11\"><li>item 1</li><li>item 2</li></ol>" ~?= Right (OrderedList (11, [S.Line [Normal "item 1"], S.Line [Normal "item 2"]]))
       ]
 
 test_hImgP =
   "link"
     ~: TestList
-      [ p hImgP "[google](google.com)\n" ~?= Left "No parses",
-        p hImgP "![google]\n(google.com)\n" ~?= Left "No parses",
-        p hImgP "![img](image.png)" ~?= Right (Image "img" "image.png"),
-        p hImgP "![](image.png)" ~?= Right (Image "" "image.png")
+      [ p hImgP "<img>" ~?= Left "No parses",
+        p hImgP "<img alt=\"alternative\" src=\"url\">" ~?= Right (Image "alternative" "url"),
+        p hImgP "<img alt=\"\" src=\"image.png\">" ~?= Right (Image "" "image.png")
       ]
 
 test_hBlockQuoteP =
   "block quote"
     ~: TestList
-      [ p quoteP "``` ``" ~?= Left "No parses",
-        p quoteP ">hello\n" ~?= Right (BlockQuote [S.Line [Normal "hello"]]),
-        p quoteP ">1\n>2\n" ~?= Right (BlockQuote [S.Line [Normal "1"], S.Line [Normal "2"]]),
-        p quoteP ">1\n>2\n> 3\n" ~?= Right (BlockQuote [S.Line [Normal "1"], S.Line [Normal "2"], S.Line [Normal "3"]])
+      [ p hQuoteP "<blockquote><p>hello</p></blockquote>" ~?= Right (BlockQuote [S.Line [Normal "hello"]]),
+        p hQuoteP "<blockquote><p>1</p><p>2</p></blockquote>" ~?= Right (BlockQuote [S.Line [Normal "1"], S.Line [Normal "2"]]),
+        p hQuoteP "<blockquote><p>1</p><p>2</p><p>3</p></blockquote>" ~?= Right (BlockQuote [S.Line [Normal "1"], S.Line [Normal "2"], S.Line [Normal "3"]]),
+        p hQuoteP "<blockquote></blockquote>" ~?= Right (BlockQuote [])
       ]
 
 test_hParagraphP =
   "paragraph"
     ~: TestList
-      [ p hParagraphP "regular string\n"
+      [ p hParagraphP "<p>regular string</p>"
           ~?= Right
             (Paragraph (S.Line [Normal "regular string"])),
-        p hParagraphP "regular string `code` and *italics*\n"
+        p hParagraphP "<p>regular string <code>code</code> and <i>italics</i></p>"
           ~?= Right (Paragraph (S.Line [Normal "regular string ", InlineCode "code", Normal " and ", Italic "italics"]))
       ]
 
-test_hCodehBlockP =
+test_hCodeBlockP =
   "code block"
     ~: TestList
-      [ p hCodehBlockP "``` ``\n" ~?= Left "No parses",
-        p hCodehBlockP "``````\n" ~?= Left "No parses",
-        p hCodehBlockP "```\n```\n" ~?= Right (CodeBlock ""),
-        p hCodehBlockP "```\nhello!\n```\n" ~?= Right (CodeBlock "hello!\n"),
-        p hCodehBlockP "```\na line\nanother line\n```\n"
+      [ p hCodeBlockP "<pre><code></code></pre>" ~?= Right (CodeBlock ""),
+        p hCodeBlockP "<pre><code>hello!\n</code></pre>" ~?= Right (CodeBlock "hello!\n"),
+        p hCodeBlockP "<pre><code>a line\nanother line\n</code></pre>"
           ~?= Right
-            ( CodeBlock "a line\nanother line\n" )
+            (CodeBlock "a line\nanother line\n")
       ]
 
 test_hBrPhHrP =
   "br and hr"
     ~: TestList
-      [ p hHrP "--" ~?= Left "No parses",
-        p hHrP "---" ~?= Right Hr,
-        p hHrP "--------" ~?= Right Hr,
-        p hBrP "\n\n" ~?= Right Br,
-        p hBrP "" ~?= Left "No parses",
-        p hBrP " " ~?= Left "No parses"
+      [ p hHrP "<hr/>" ~?= Right Hr,
+        p hHrP "<hr>" ~?= Right Hr,
+        p hBrP "<br/>" ~?= Right Br,
+        p hBrP "<br>" ~?= Right Br
       ]
 
-test_hTableP =
-  "table"
-    ~: TestList
-      []
+-- test_tableP =
+--   "table"
+--     ~: TestList
+--       []
 
 test_hBlockP =
   "parsing block"
     ~: TestList
-      [ p hBlockP "# Heading 1 `code`\n `code`"
-          ~?= Right (Heading 1 (S.Line [Normal "Heading 1 ", InlineCode "code"]))
+      [ p hBlockP "<h1>Heading 1<code>code</code></h1>"
+          ~?= Right (Heading 1 (S.Line [Normal "Heading 1", InlineCode "code"]))
       ]
 
-test_htmlP =
-  "markdown doc"
+test_hHtmlP =
+  "html"
     ~: TestList
-      [ p htmlP "# Heading 1\n"
-          ~?= Right (Doc [Heading 1 (S.Line [Normal "Heading 1"])]),
-        p htmlP sampleText
+      [ p htmlP "<html><h1>Heading 1</h1><p><i>italics</i></p></html>"
           ~?= Right
-            ( Doc
-                [ Heading 1 (Line [Normal "Heading 1"]),
-                  Paragraph (Line [Normal "This is ", InlineCode "inline code", Normal ". "]),
-                  Paragraph (Line [Bold "bold", Normal ", ", Italic "italic", Normal ", ", Strikethrough "struckthrough"]),
-                  -- CodeBlock [Line [Normal "fold :: (a -> b -> b) -> b -> [a] -> b"], Line [Normal "fold f z [] = z"], Line [Normal "fold f z (x:xs) = f x (fold f z xs)"]],
-                  OrderedList (3, [Line [Normal "This is a numbered list."], Line [Normal "This is the second item."], Line [Normal "This is the third item."]])
-                ]
+            ( Doc [Heading 1 (S.Line [Normal "Heading 1"]), Paragraph (S.Line [Italic "italics"])]
             )
-      ]-}
+      ]
 
-htmlTests = TestList
-  [ test_hBoldP,
-    test_hItalicP,
-    test_hStrikeP,
-    test_hInlineCodeP,
-    test_hNormalP,
-    test_hTextP
-    -- test_hLineP,
-    -- test_hHeadingP,
-    -- test_hCodehBlockP,
-    -- test_hParagraphP,
-    -- test_hUListP,
-    -- test_hOListP,
-    -- test_hLinkP,
-    -- test_hImgP,
-    -- test_hBlockQuoteP,
-    -- test_hBrPhHrP,
-    -- test_hTableP,
-    -- test_hBlockP,
-    -- test_htmlP
-  ]
+htmlTests =
+  TestList
+    [ test_hBoldP,
+      test_hItalicP,
+      test_hStrikeP,
+      test_hInlineCodeP,
+      test_hNormalP,
+      test_hTextP,
+      test_hLineP,
+      test_hHeadingP,
+      test_hCodeBlockP,
+      test_hParagraphP,
+      test_hUlListP,
+      test_hOlListP,
+      -- test_hLinkP,
+      test_hImgP,
+      test_hBlockQuoteP,
+      test_hBrPhHrP,
+      -- test_hTableP,
+      test_hBlockP,
+      test_hHtmlP
+    ]
 
 test_all = runTestTT htmlTests
