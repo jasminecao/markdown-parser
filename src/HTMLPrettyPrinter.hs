@@ -40,7 +40,9 @@ instance PP S.Text where
   pp (S.Normal s) = PP.text s
 
 instance PP S.TableHead where
-  pp (TableHead tr) = tag "thead" $ pp tr
+  pp (TableHead (TableRow tds)) = tag "thead" (tag "tr" (PP.hcat $ map printHeaderCell tds))
+    where
+      printHeaderCell (TableCell l) = tag "th" (pp l)
 
 instance PP S.TableBody where
   pp (TableBody trs) = tag "tbody" $ PP.hcat (map pp trs)

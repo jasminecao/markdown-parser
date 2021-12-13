@@ -33,7 +33,7 @@ blank.) Normal paragraphs should not be indented with spaces or tabs.
 |]
 
 tableSimple :: String
-tableSimple = "| Syntax | Description |\n|-----------|-----------|\n| Header | Title |\n| Paragraph | Text |\n"
+tableSimple = "| Syntax | Description |\n| ----------- | ----------- |\n| Header | Title |\n| Paragraph | Text |\n"
 
 -- headers and paragraphs only
 blockTextSimple :: String

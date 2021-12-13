@@ -70,8 +70,6 @@ olListP =
         lineP
     return (startVal, firstItem : remainingItems)
 
--- TODO: spaces between separators
--- TODO: parse if no header separator
 tableP :: Parser Block
 tableP = do
   firstRow <- rowP <* try theadSeparatorP
@@ -82,13 +80,14 @@ tableP = do
     pipeP :: Parser String
     pipeP = string "|" <* many (string " " <|> string "\t")
 
-    -- parses for a row of header separators |---|---|---|
+    -- parses for a row of header separators | --- | --- | --- |
     theadSeparatorP :: Parser ()
     theadSeparatorP =
       ( pipeP
           *> manyTill
             ( do
-                hx <- manyTill (char '-') pipeP
+                hx <- manyTill (char '-') (many (satisfy isSpace) *> pipeP)
+                -- needs to be at least three --- to parse as a header
                 Monad.guard (length hx >= 3)
             )
             newLineChar
