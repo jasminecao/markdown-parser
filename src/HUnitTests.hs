@@ -322,18 +322,13 @@ test_hUlListP =
         p hUlListP "<ul><li>item 1</li><li>item 2</li></ul>" ~?= Right (UnorderedList [S.Line [Normal "item 1"], S.Line [Normal "item 2"]])
       ]
 
--- test_olListP =
---   "ordered list"
---     ~: TestList
---       [ p olListP "1.1" ~?= Left "No parses",
---         p olListP "1. item 1\n" ~?= Right (OrderedList (1, [S.Line [Normal "item 1"]])),
---         p olListP "1. item 1\n2. item 2\n" ~?= Right (OrderedList (1, [S.Line [Normal "item 1"], S.Line [Normal "item 2"]])),
---         p olListP "11. item 1\n2. item 2\n" ~?= Right (OrderedList (11, [S.Line [Normal "item 1"], S.Line [Normal "item 2"]])),
---         p olListP "1. item 1\n2.item 2\n"
---           ~?= Right
---             ( OrderedList (1, [S.Line [Normal "item 1"], S.Line [Normal "item 2"]])
---             )
---       ]
+test_hOlListP =
+  "ordered list"
+    ~: TestList
+      [ p hOlListP "<ol start=\"1\"><li>item 1</li></ol>" ~?= Right (OrderedList (1, [S.Line [Normal "item 1"]])),
+        p hOlListP "<ol start=\"1\"><li>item 1</li><li>item 2</li></ol>" ~?= Right (OrderedList (1, [S.Line [Normal "item 1"], S.Line [Normal "item 2"]])),
+        p hOlListP "<ol start=\"11\"><li>item 1</li><li>item 2</li></ol>" ~?= Right (OrderedList (11, [S.Line [Normal "item 1"], S.Line [Normal "item 2"]]))
+      ]
 
 test_hImgP =
   "link"
@@ -409,7 +404,8 @@ htmlTests =
       test_hParagraphP,
       test_hCodeBlockP,
       test_hBrPhHrP,
-      test_hUlListP
+      test_hUlListP,
+      test_hOlListP
     ]
 
 test_all = do

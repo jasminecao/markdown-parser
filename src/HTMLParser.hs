@@ -63,7 +63,7 @@ hBlockP = tryBlockP <* many (string "\n")
         <|> try hHrP
         <|> try hHeadingP
         <|> try hUlListP
-        <|> try hOListP
+        <|> try hOlListP
         <|> try hQuoteP
         <|> try hCodeBlockP
         <|> hParagraphP
@@ -85,17 +85,18 @@ hUlListP :: Parser Block
 hUlListP = UnorderedList <$> simpleContainerTest "ul" hLiP
 
 -- parses for an ordered list (1. list item)
-hOListP :: Parser Block
-hOListP =
-  OrderedList <$> do
-    startVal <- int
-    wsP (string ". ")
-    firstItem <- hLineP
-    remainingItems <- many $
-      do
-        int <* wsP (string ".")
-        hLineP
-    return (startVal, firstItem : remainingItems)
+hOlListP :: Parser Block
+hOlListP = OrderedList <$> ((,) <$> (read <$> openingWithAttr "ol" "start") <*> manyTill hLiP (try (closingTag "ol")))
+
+-- OrderedList <$> do
+--   startVal <- int
+--   wsP (string ". ")
+--   firstItem <- hLineP
+--   remainingItems <- many $
+--     do
+--       int <* wsP (string ".")
+--       hLineP
+--   return (startVal, firstItem : remainingItems)
 
 -- parses for a link <a href=\"url\">stuff</a>
 hLinkP :: Parser Text
