@@ -83,9 +83,10 @@ openingWithAttr tag name = wsP (string ('<' : tag)) *> wsP (attr name) <* string
 
 -- parses for a link <a href=\"url\">stuff</a>
 hLinkP :: Parser Text
-hLinkP = (flip Link <$> 
-  (try (openingWithAttr "a" "href") <|> openingTag "a" $> "")) 
-  <*> manyTill hTextP (closingTag "a")
+hLinkP =
+  flip Link
+    <$> (try (openingWithAttr "a" "href") <|> openingTag "a" $> "")
+    <*> manyTill (try hTextP) (try (closingTag "a"))
 
 -- parses for a <img src=\"url\">
 hImgP :: Parser Block
@@ -169,10 +170,11 @@ hNormalP =
                 anyChar
                 ( choice $
                     [try $ lookAhead (openingTag tag) | tag <- htmlTags]
-                      ++ [try $ lookAhead 
-                            (string ('<' : tag) *> manyTill anyChar (string ">")) 
-                            | tag <- htmlTags
-                          ]
+                      ++ [ try $
+                             lookAhead
+                               (string ('<' : tag) *> manyTill anyChar (string ">"))
+                           | tag <- htmlTags
+                         ]
                       ++ [try $ lookAhead (closingTag tag) | tag <- htmlTags]
                 )
             )

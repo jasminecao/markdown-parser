@@ -21,8 +21,7 @@ instance Arbitrary Text where
         Italic <$> genSafeString,
         Strikethrough <$> genSafeString,
         InlineCode <$> genSafeString,
-        -- TODO: fix link parsing
-        -- Link <$> genLink <*> genSafeString,
+        Link <$> genLink <*> genSafeString,
         Normal <$> genSafeString
       ]
     where
@@ -137,7 +136,7 @@ prop_roundtrip_html_block b = parse hBlockP "" (htmlPretty b) == Right b
 
 prop_roundtrip_full_text :: Text -> Bool
 prop_roundtrip_full_text t = case parse textP "" (markdownPretty t) of
-  Right t -> parse hTextP "" (htmlPretty t) == Right t
+  Right a -> parse hTextP "" (htmlPretty a) == Right t
   Left _ -> False
 
 prop_roundtrip_full_line :: S.Line -> Bool
