@@ -169,6 +169,10 @@ hNormalP =
                 anyChar
                 ( choice $
                     [try $ lookAhead (openingTag tag) | tag <- htmlTags]
+                      ++ [try $ lookAhead 
+                            (string ('<' : tag) *> manyTill anyChar (string ">")) 
+                            | tag <- htmlTags
+                          ]
                       ++ [try $ lookAhead (closingTag tag) | tag <- htmlTags]
                 )
             )

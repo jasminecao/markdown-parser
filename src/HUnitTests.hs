@@ -298,7 +298,11 @@ test_hLineP =
           ~?= Right (S.Line [InlineCode "code", Normal " **line"]),
         p hLineP "regular text <not**line"
           ~?= Right (Line [Normal "regular text <not**line"]),
-        p hLineP "``\n" ~?= Right (S.Line [Normal "``\n"])
+        p hLineP "``\n" ~?= Right (S.Line [Normal "``\n"]),
+        p hLineP "<a>link</a> and normal stuff"
+          ~?= Right (S.Line [Link [Normal "link"] "", Normal " and normal stuff"]),
+        p hLineP "normal stuff and a <a href=\"url\">link</a>"
+          ~?= Right (S.Line [Normal "normal stuff and a ", Link [Normal "link"] "url"])
       ]
 
 test_hHeadingP =
