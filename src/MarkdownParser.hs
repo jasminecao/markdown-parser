@@ -8,7 +8,7 @@ import qualified Syntax as S
 import Text.Parsec.Token
 import Text.ParserCombinators.Parsec as Parsec
 
--- for testing......
+-- TODO: delete this. for testing......
 p2 :: Parser a -> String -> Either String a
 p2 parser str = case parse parser "" str of
   Left err -> Left "No parses"
@@ -22,7 +22,6 @@ parseMarkdown = parse markdownP ""
 markdownP :: Parser Doc
 markdownP = Doc <$> many1 blockP
 
--- TODO: add end of line check (\n)
 -- parses for a block of markdown (headings, lists, quotes, code blocks)
 blockP :: Parser Block
 blockP = tryBlockP <* many (string "\n")
