@@ -4,7 +4,7 @@ import Data.Char (isSpace)
 import HTMLParser
 import MarkdownParser
 import SampleText
-import Syntax (Block (..), Doc (Doc), Line (..), Text (..))
+import Syntax (Block (..), Doc (Doc), Line (..), TableBody (..), TableCell (..), TableHead (..), TableRow (..), Text (..))
 import qualified Syntax as S
 import Test.HUnit (Test (TestList), runTestTT, (~:), (~?=))
 import Text.Parsec.Token
@@ -185,7 +185,7 @@ test_brPHrP =
 test_tableP =
   "table"
     ~: TestList
-      []
+      [p tableP tableSimple ~?= Right (Table (TableHead (TableRow [TableCell (Line [Normal "Syntax "]), TableCell (Line [Normal "Description "])])) (TableBody [TableRow [TableCell (Line [Normal "Header "]), TableCell (Line [Normal "Title "])], TableRow [TableCell (Line [Normal "Paragraph "]), TableCell (Line [Normal "Text "])]]))]
 
 test_blockP =
   "parsing block"
@@ -309,7 +309,7 @@ test_hHeadingP =
         p hHeadingP "<h7>Heading 7</h7>" ~?= Left "No parses",
         p hHeadingP "Heading 1\n" ~?= Left "No parses",
         p hHeadingP "<h2><h1>Heading 2</h2>" ~?= Right (Heading 2 (S.Line [Normal "<h1>Heading 2"]))
-        -- p hHeadingP "<h1>HEADING<a href=\"url\">ONE</a></h1>" ~?= 
+        -- p hHeadingP "<h1>HEADING<a href=\"url\">ONE</a></h1>" ~?=
         --   Right (Heading 1 (S.Line [Normal "HEADING ", Link ["ONE"] "url"]))
       ]
 

@@ -2,8 +2,8 @@ module MarkdownParser where
 
 import qualified Control.Monad as Monad
 import Data.Char (isSpace)
-import Data.Functor
-import Syntax (Block (..), Doc (Doc), Line, Text (..))
+import Data.Functor (($>))
+import Syntax (Block (..), Doc (Doc), Line, TableBody, TableCell, TableHead, TableRow, Text (..))
 import qualified Syntax as S
 import Text.Parsec.Token
 import Text.ParserCombinators.Parsec as Parsec
@@ -69,6 +69,39 @@ olListP =
         int <* wsP (string ".")
         lineP
     return (startVal, firstItem : remainingItems)
+
+-- TODO: spaces between separators
+-- TODO: parse if no header separator
+tableP :: Parser Block
+tableP = do
+  firstRow <- rowP <* try theadSeparatorP
+  remainingRows <- many rowP
+  return $ Table (S.TableHead firstRow) (S.TableBody remainingRows)
+  where
+    -- parses the pipe character and any spaces/tabs following
+    pipeP :: Parser String
+    pipeP = string "|" <* many (string " " <|> string "\t")
+
+    -- parses for a row of header separators |---|---|---|
+    theadSeparatorP :: Parser ()
+    theadSeparatorP =
+      ( pipeP
+          *> manyTill
+            ( do
+                hx <- manyTill (char '-') pipeP
+                Monad.guard (length hx >= 3)
+            )
+            newLineChar
+      )
+        $> ()
+
+    -- parses a row of table cells
+    rowP :: Parser TableRow
+    rowP =
+      pipeP
+        *> ( S.TableRow
+               <$> manyTill (S.TableCell . S.Line <$> manyTill (try textP) (try pipeP)) newLineChar
+           )
 
 -- parses for a link ([text](link))
 linkP :: Parser Text
@@ -152,7 +185,7 @@ normalP =
 -- parses for a string until a reserved character is found
 -- TODO: add this to syntax?
 stringP :: Parser String
-stringP = many1 $ noneOf ['*', '~', '`', '>', '_', '[', ']', '\n']
+stringP = many1 $ noneOf ['*', '~', '`', '>', '_', '[', ']', '|', '\n']
 
 -- removes trailing whitespace
 wsP :: Parser a -> Parser a

@@ -17,14 +17,19 @@ data Block
   | CodeBlock String
   | Hr -- empty
   | Br -- empty
-  | Table TableType TableType -- thead, tbody
+  | Table TableHead TableBody -- thead, tbody
   deriving (Eq, Show)
 
-data TableType
-  = TableHead [TableType]
-  | TableBody [TableType]
-  | TableRow [TableType]
-  | TableCell Line
+newtype TableHead = TableHead TableRow
+  deriving (Eq, Show)
+
+newtype TableBody = TableBody [TableRow]
+  deriving (Eq, Show)
+
+newtype TableRow = TableRow [TableCell]
+  deriving (Eq, Show)
+
+newtype TableCell = TableCell Line
   deriving (Eq, Show)
 
 -- | Line of text, may include multiple text elements.

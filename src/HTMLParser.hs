@@ -3,7 +3,7 @@ module HTMLParser where
 import qualified Control.Monad as Monad
 import Data.Char (isSpace)
 import Data.Functor (($>))
-import Syntax (Block (..), Doc (Doc), Line, Text (..), TableType (..))
+import Syntax (Block (..), Doc (Doc), Line, TableBody (..), TableCell (..), TableHead (..), TableRow (..), Text (..))
 import qualified Syntax as S
 import Text.Parsec.Token
 import Text.ParserCombinators.Parsec
@@ -113,19 +113,19 @@ hBrP = (try (openingTag "br") <|> string "<br/>") $> Br
 hLineP :: Parser S.Line
 hLineP = S.Line <$> many1 hTextP
 
-hTableP :: Parser Block 
+hTableP :: Parser Block
 hTableP = Table <$> hTableHeadP <*> hTableBodyP
 
-hTableHeadP :: Parser TableType 
-hTableHeadP = TableHead <$> container "tr" hTableCellP
+hTableHeadP :: Parser TableHead
+hTableHeadP = TableHead . TableRow <$> container "tr" hTableCellP
 
-hTableBodyP :: Parser TableType 
-hTableBodyP = TableBody <$> container "tr" hTableCellP
+hTableBodyP :: Parser TableBody
+hTableBodyP = TableBody <$> container "tbody" hTableRowP
 
-hTableRowP :: Parser TableType 
+hTableRowP :: Parser TableRow
 hTableRowP = TableRow <$> container "tr" hTableCellP
 
-hTableCellP :: Parser TableType 
+hTableCellP :: Parser TableCell
 hTableCellP = TableCell <$> lineContainer "td"
 
 -- parses for a text string

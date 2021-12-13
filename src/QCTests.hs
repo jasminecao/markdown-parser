@@ -4,7 +4,7 @@ import qualified Control.Monad as Monad
 import Data.Char (isSpace)
 import MarkdownParser
 import MarkdownPrettyPrinter
-import Syntax (Block (..), Doc (Doc), Line, TableType (..), Text (..))
+import Syntax (Block (..), Doc (Doc), Line, Text (..))
 import qualified Syntax as S
 import Test.HUnit
 import Test.QuickCheck (Arbitrary, Gen, arbitrary, choose, oneof, shrink)
@@ -65,19 +65,19 @@ instance Arbitrary S.Line where
   shrink (S.Line (x : xs)) = [S.Line xs]
   shrink _ = []
 
-instance Arbitrary TableType where
-  arbitrary =
-    oneof
-      [ TableHead <$> arbitrary,
-        TableBody <$> arbitrary,
-        TableRow <$> arbitrary,
-        TableCell . S.Line <$> arbitrary
-      ]
+-- instance Arbitrary TableType where
+--   arbitrary =
+--     oneof
+--       [ TableHead <$> arbitrary,
+--         TableBody <$> arbitrary,
+--         TableRow <$> arbitrary,
+--         TableCell . S.Line <$> arbitrary
+--       ]
 
-  shrink (TableHead b) = b
-  shrink (TableBody r) = r
-  shrink (TableRow c) = c
-  shrink (TableCell c) = []
+--   shrink (TableHead b) = b
+--   shrink (TableBody r) = r
+--   shrink (TableRow c) = c
+--   shrink (TableCell c) = []
 
 instance Arbitrary Block where
   arbitrary =
@@ -111,7 +111,7 @@ instance Arbitrary Block where
   shrink (CodeBlock ln) = CodeBlock <$> shrink ln
   shrink Hr = [Hr]
   shrink Br = [Br]
-  shrink (Table t) = undefined
+  shrink (Table thead tbody) = undefined
 
 prop_roundtrip_text :: Text -> Bool
 prop_roundtrip_text t = parse textP "" (markdownPretty t) == Right t
