@@ -308,9 +308,13 @@ test_hHeadingP =
         p hHeadingP "<h4>Heading 4</h4>" ~?= Right (Heading 4 (S.Line [Normal "Heading 4"])),
         p hHeadingP "<h7>Heading 7</h7>" ~?= Left "No parses",
         p hHeadingP "Heading 1\n" ~?= Left "No parses",
-        p hHeadingP "<h2><h1>Heading 2</h2>" ~?= Right (Heading 2 (S.Line [Normal "<h1>Heading 2"]))
-        -- p hHeadingP "<h1>HEADING<a href=\"url\">ONE</a></h1>" ~?=
-        --   Right (Heading 1 (S.Line [Normal "HEADING ", Link ["ONE"] "url"]))
+        p hHeadingP "<h2><h1>Heading 2</h2>" ~?= Right (Heading 2 (S.Line [Normal "<h1>Heading 2"])),
+        p hHeadingP "<h1><a href=\"url\">heading link</a></h1>" ~?= 
+          Right (Heading 1 (S.Line [Link [Normal "heading link"] "url"])),
+        p hHeadingP "<h1><a href=\"url\">heading link</a> and normal stuff</h1>" ~?=
+          Right (Heading 1 (S.Line [Link [Normal "heading link"] "url", Normal " and normal stuff"])),
+        p hHeadingP "<h1>HEADING<a href=\"url\"> ONE</a></h1>" ~?=
+          Right (Heading 1 (S.Line [Normal "HEADING", Link [Normal " ONE"] "url"]))
       ]
 
 test_hUlListP =
@@ -404,7 +408,7 @@ htmlTests =
       test_hStrikeP,
       test_hInlineCodeP,
       test_hNormalP,
-      -- test_hLinkP,
+      test_hLinkP,
       test_hTextP,
       test_hLineP,
       test_hHeadingP,
