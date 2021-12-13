@@ -64,7 +64,7 @@ test_hTextP =
         p hTextP "<del>strikethrough</del>" ~?= Right (Strikethrough "strikethrough"),
         p hTextP "<b>bold</b>" ~?= Right (Bold "bold"),
         p hTextP "<i>italic</i>" ~?= Right (Italic "italic"),
-        p hTextP "<code> test this" ~?= Left "No parses"
+        p hTextP "<code> test this" ~?= Right (Normal "<code> test this")
       ]
 
 test_hLineP =
@@ -211,4 +211,4 @@ htmlTests =
       test_hHtmlP
     ]
 
-test_all = runTestTT htmlTests
+test_html = runTestTT htmlTests
