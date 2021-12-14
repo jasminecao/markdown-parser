@@ -3,7 +3,7 @@ module HTMLHUnitTests where
 import Data.Char (isSpace)
 import HTMLParser
 import SampleText
-import Syntax (Block (..), Doc (Doc), Line (..), Text (..), TableHead (..), TableBody (..), TableRow (..), TableCell (..))
+import Syntax (Block (..), Doc (Doc), Line (..), TableBody (..), TableCell (..), TableHead (..), TableRow (..), Text (..))
 import qualified Syntax as S
 import Test.HUnit (Test (TestList), runTestTT, (~:), (~?=))
 import Text.Parsec.Token
@@ -129,6 +129,14 @@ test_hImgP =
         p hImgP "<img alt=\"\" src=\"image.png\">" ~?= Right (Image "" "image.png")
       ]
 
+test_hLinkP =
+  "link"
+    ~: TestList
+      [ p hLinkP "<a href=\"google.com\">google</a>" ~?= Right (Link [Normal "google"] "google.com"),
+        p hLinkP "<a href=\"google.com\"></a>" ~?= Right (Link [] "google.com"),
+        p hLinkP "<a>google</a>" ~?= Right (Link [Normal "google"] "")
+      ]
+
 test_hBlockQuoteP =
   "block quote"
     ~: TestList
@@ -172,34 +180,35 @@ test_hTableP =
     ~: TestList
       [ p (hTableCellP "td") "<td>abc</td>" ~?= Right (S.TableCell (S.Line [Normal "abc"])),
         p (hTableRowP "td") "<tr><td>abc</td></tr>" ~?= Right (S.TableRow [S.TableCell (S.Line [Normal "abc"])]),
-        p (hTableRowP "td") "<tr><td>abc</td><td>def</td></tr>" 
+        p (hTableRowP "td") "<tr><td>abc</td><td>def</td></tr>"
           ~?= Right (S.TableRow [S.TableCell (S.Line [Normal "abc"]), S.TableCell (S.Line [Normal "def"])]),
-        p (hTableRowP "td") "<tr><td>abc</td><td>def</td></tr>" 
+        p (hTableRowP "td") "<tr><td>abc</td><td>def</td></tr>"
           ~?= Right (S.TableRow [S.TableCell (S.Line [Normal "abc"]), S.TableCell (S.Line [Normal "def"])]),
         p hTableBodyP "<tbody><tr><td>abc</td><td>def</td></tr></tbody>"
           ~?= Right (S.TableBody [S.TableRow [S.TableCell (S.Line [Normal "abc"]), S.TableCell (S.Line [Normal "def"])]]),
         p hTableBodyP "<tbody><tr><td>abc</td></tr><tr><td>def</td></tr></tbody>"
           ~?= Right (S.TableBody [S.TableRow [S.TableCell (S.Line [Normal "abc"])], S.TableRow [S.TableCell (S.Line [Normal "def"])]]),
-        p hTableHeadP "<thead><tr><th>abc</th><th>def</th></tr></thead>" 
+        p hTableHeadP "<thead><tr><th>abc</th><th>def</th></tr></thead>"
           ~?= Right (S.TableHead $ S.TableRow [S.TableCell (S.Line [Normal "abc"]), S.TableCell (S.Line [Normal "def"])]),
-        p hTableBodyP "<thead><tr><th>abc</th></tr><tr><th>def</th></tr></thead>"  ~?= Left "No parses",
-        p hTableP 
+        p hTableBodyP "<thead><tr><th>abc</th></tr><tr><th>def</th></tr></thead>" ~?= Left "No parses",
+        p
+          hTableP
           "<table>\
-            \<thead><tr><th>abc</th></tr></thead>\
-            \<tbody><tr><td>def</td></tr></tbody>\
-          \</table>" 
+          \<thead><tr><th>abc</th></tr></thead>\
+          \<tbody><tr><td>def</td></tr></tbody>\
+          \</table>"
           ~?= Right (Table (S.TableHead $ S.TableRow [S.TableCell $ S.Line [Normal "abc"]]) (S.TableBody [S.TableRow [S.TableCell $ S.Line [Normal "def"]]])),
         p
           hTableP
           "<table>\
-            \<thead><tr><th>col1</th></tr></thead>\
-            \<tbody>\
-              \<tr><td>data1</td></tr>\
-              \<tr><td>data2</td></tr>\
-              \<tr><td>data3</td></tr>\
-            \</tbody>\
-          \</table>" 
-          ~?=  Right (Table (S.TableHead (S.TableRow [S.TableCell (S.Line [S.Normal "col1"])])) (S.TableBody [S.TableRow [S.TableCell (S.Line [S.Normal "data1"])],S.TableRow [S.TableCell (S.Line [S.Normal "data2"])],S.TableRow [S.TableCell (S.Line [S.Normal "data3"])]])),
+          \<thead><tr><th>col1</th></tr></thead>\
+          \<tbody>\
+          \<tr><td>data1</td></tr>\
+          \<tr><td>data2</td></tr>\
+          \<tr><td>data3</td></tr>\
+          \</tbody>\
+          \</table>"
+          ~?= Right (Table (S.TableHead (S.TableRow [S.TableCell (S.Line [S.Normal "col1"])])) (S.TableBody [S.TableRow [S.TableCell (S.Line [S.Normal "data1"])], S.TableRow [S.TableCell (S.Line [S.Normal "data2"])], S.TableRow [S.TableCell (S.Line [S.Normal "data3"])]])),
         p hTableP "<table><thead><tr></tr></thead><tbody></tbody></table>" ~?= Right (Table (TableHead (TableRow [])) (TableBody []))
       ]
 
