@@ -14,6 +14,11 @@ import qualified Test.QuickCheck as QC
 import Text.Parsec.Token
 import Text.ParserCombinators.Parsec as Parsec
 
+noConsecutiveNormal :: [Text] -> Bool
+noConsecutiveNormal [] = True
+noConsecutiveNormal (Normal _ : Normal _ : _) = False
+noConsecutiveNormal (_ : rest) = noConsecutiveNormal rest
+
 instance Arbitrary Text where
   arbitrary =
     oneof
@@ -30,10 +35,11 @@ instance Arbitrary Text where
         QC.listOf1 arbitrary `QC.suchThat` noInnerLink
 
       noInnerLink :: [Text] -> Bool
-      noInnerLink [] = True
-      noInnerLink (Link _ _ : _) = False
-      noInnerLink (Normal _ : Normal _ : _) = False
-      noInnerLink (_ : xs) = noInnerLink xs
+      noInnerLink l = foldr (\x acc -> not (isLink x) && acc) True l && noConsecutiveNormal l
+
+      isLink :: Text -> Bool
+      isLink (Link _ _) = True
+      isLink _ = False
 
       genSafeString :: Gen String
       genSafeString =

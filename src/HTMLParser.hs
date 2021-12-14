@@ -3,16 +3,10 @@ module HTMLParser where
 import qualified Control.Monad as Monad
 import Data.Char (isSpace)
 import Data.Functor (($>))
-import Syntax (Block (..), Doc (Doc), Line, TableBody (..), TableCell (..), TableHead (..), TableRow (..), Text (..))
+import Syntax (Block (..), Doc (Doc), Line, TableBody (..), TableCell (..), TableHead (..), TableRow (..), Text (..), htmlTags)
 import qualified Syntax as S
 import Text.Parsec.Token
 import Text.ParserCombinators.Parsec
-
--- for testing (again LOL)
-p3 :: Parser a -> String -> Either String a
-p3 parser str = case parse parser "" str of
-  Left err -> Left "No parses"
-  Right x -> Right x
 
 {- HTML parsers -}
 
@@ -219,38 +213,3 @@ many1Till p end = do
 -- | Removes trailing whitespace
 wsP :: Parser a -> Parser a
 wsP p = p <* many (satisfy isSpace)
-
--- TODO: move to Syntax.hs?
--- | Reserved HTML tags
-htmlTags :: [String]
-htmlTags =
-  [ "html",
-    "blockquote",
-    "code",
-    "pre",
-    "img",
-    "h1",
-    "h2",
-    "h3",
-    "h4",
-    "h5",
-    "h6",
-    "hr",
-    "br",
-    "ol",
-    "ul",
-    "li",
-    "p",
-    "i",
-    "b",
-    "a",
-    "del",
-    "table",
-    "tbody",
-    "thead",
-    "tfoot",
-    "tbody",
-    "td",
-    "th",
-    "tr"
-  ]

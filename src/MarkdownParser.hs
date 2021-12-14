@@ -3,21 +3,15 @@ module MarkdownParser where
 import qualified Control.Monad as Monad
 import Data.Char (isSpace)
 import Data.Functor (($>))
-import Syntax (Block (..), Doc (Doc), Line, TableBody, TableCell, TableHead, TableRow, Text (..))
+import Syntax (Block (..), Doc (Doc), Line, TableBody, TableCell, TableHead, TableRow, Text (..), reservedMarkdownChars)
 import qualified Syntax as S
 import Text.Parsec.Token
 import Text.ParserCombinators.Parsec as Parsec
 
--- TODO: delete this. for testing......
-p2 :: Parser a -> String -> Either String a
-p2 parser str = case parse parser "" str of
-  Left err -> Left "No parses"
-  Right x -> Right x
 
 {- Markdown parsers -}
 
 -- | Parses the complete file or text into a Doc type.
--- TODO: add error filepath arg to parse
 parseMarkdown :: String -> Either ParseError Doc
 parseMarkdown = parse markdownP ""
 
@@ -51,7 +45,6 @@ headingP = do
   Monad.guard (length hx < 7)
   Heading (length hx) <$> lineP
 
--- TODO: figure out how to implement sublists?
 -- | Parses for an unordered list (- list item)
 ulListP :: Parser Block
 ulListP =
@@ -200,10 +193,9 @@ bracketsP p = string "[" *> p <* optional (string "]")
 parensP :: Parser a -> Parser a
 parensP p = string "(" *> p <* string ")"
 
--- TODO: add this to syntax?
 -- | Parses for a string until a reserved character is found
 stringP :: Parser String
-stringP = many1 $ noneOf ['*', '~', '`', '>', '_', '[', ']', '|', '\n']
+stringP = many1 $ noneOf reservedMarkdownChars
 
 -- | Removes trailing whitespace
 wsP :: Parser a -> Parser a

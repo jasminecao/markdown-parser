@@ -28,7 +28,6 @@ library
       HTMLHUnitTests
       HTMLParser
       HTMLPrettyPrinter
-      Lib
       MarkdownParser
       MarkdownPrettyPrinter
       MDHUnitTests

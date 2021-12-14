@@ -22,7 +22,6 @@ instance PP S.Block where
   pp (S.UnorderedList ls) = tag "ul" (PP.hcat $ map (tag "li" . pp) ls)
   pp (S.Image alt src) = tagWithAttrs "img" [("alt", alt), ("src", src)] mempty
   pp (S.BlockQuote ls) = tag "blockquote" (PP.hcat $ map (tag "p" . pp) ls)
-  -- TODO: refactor?
   pp (S.CodeBlock str) = tag "pre" $ tag "code" (PP.text str)
   pp S.Hr = PP.text "<hr>"
   pp S.Br = PP.text "<br>"

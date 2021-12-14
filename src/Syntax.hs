@@ -51,3 +51,42 @@ data Text
   | Link [Text] String -- text, url
   | Normal String
   deriving (Eq, Show)
+
+
+-- | Reserved Markdown characters
+reservedMarkdownChars :: [Char]
+reservedMarkdownChars = ['*', '~', '`', '>', '_', '[', ']', '|', '\n']
+
+-- | Reserved HTML tags
+htmlTags :: [String]
+htmlTags =
+  [ "html",
+    "blockquote",
+    "code",
+    "pre",
+    "img",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "hr",
+    "br",
+    "ol",
+    "ul",
+    "li",
+    "p",
+    "i",
+    "b",
+    "a",
+    "del",
+    "table",
+    "tbody",
+    "thead",
+    "tfoot",
+    "tbody",
+    "td",
+    "th",
+    "tr"
+  ]
