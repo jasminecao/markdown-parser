@@ -35,6 +35,7 @@ blockP = tryBlockP <* many (string "\n")
         <|> try olListP
         <|> try quoteP
         <|> try codeBlockP
+        <|> try tableP
         <|> paragraphP
 
 -- parses for # heading and converts rest of line to Line
