@@ -1,4 +1,4 @@
-module HUnitTests where
+module MDHUnitTests where
 
 import Data.Char (isSpace)
 import HTMLParser

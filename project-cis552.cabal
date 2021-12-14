@@ -28,10 +28,10 @@ library
       HTMLHUnitTests
       HTMLParser
       HTMLPrettyPrinter
-      HUnitTests
       Lib
       MarkdownParser
       MarkdownPrettyPrinter
+      MDHUnitTests
       QCTests
       SampleText
       Syntax
