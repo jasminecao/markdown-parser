@@ -10,8 +10,10 @@ import Text.ParserCombinators.Parsec as Parsec
 
 main :: IO ()
 main = do
-  s <- readFile "somefile.md"
+  putStrLn "What markdown file do you want to parse?"
+  filename <- getLine
+  s <- readFile (filename ++ ".md")
   case parseMarkdown s of
     Left error -> print error
-    Right doc -> IO.putStrLn $ htmlPretty doc
+    Right doc -> writeFile (filename ++ ".html") (htmlPretty doc) >> putStrLn "Parsed successfully!"
   return ()

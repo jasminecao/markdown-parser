@@ -14,3 +14,7 @@ fold f z (x:xs) = f x (fold f z xs)
 4. This is the second item.
 5. This is the third item.
 
+| Syntax | Description |
+| ------ | ----------- |
+| Header | Title |
+| Paragraph | Text |
