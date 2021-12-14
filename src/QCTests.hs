@@ -102,7 +102,14 @@ instance Arbitrary Block where
       genHeading = (Heading <$> choose (1, 6)) <*> arbitrary
       genParagraph = Paragraph <$> arbitrary
       genOrderedList = OrderedList <$> Monad.liftM2 (,) ((arbitrary :: Gen Int) `QC.suchThat` (>= 0)) (QC.listOf1 arbitrary)
-      genUnorderedList = UnorderedList <$> QC.listOf1 arbitrary
+      genUnorderedList = UnorderedList <$> QC.sized gen
+        where
+          gen :: Int -> Gen [S.Line]
+          gen n =
+            QC.frequency
+              [ (1, fmap (: []) (arbitrary :: Gen S.Line)),
+                (n, Monad.liftM2 (:) (arbitrary :: Gen S.Line) (gen (n `div` 2)))
+              ]
       genBlockQuote = BlockQuote <$> QC.listOf1 arbitrary
       genHr = pure Hr
       genBr = pure Br
@@ -113,45 +120,49 @@ instance Arbitrary Block where
   shrink (OrderedList (i, ln)) = [OrderedList (i, ln') | ln' <- shrink ln, not (null ln')]
   shrink (UnorderedList ln) = [UnorderedList ln' | ln' <- shrink ln, not (null ln')]
   shrink (Image alt src) = Image alt <$> shrink src
-  -- TODO: shrink BlockQuote
-  shrink (BlockQuote ln) = undefined --[BlockQuote ln' | ln' <- shrink ln, not (null ln'), not]
+  shrink (BlockQuote ln) = [BlockQuote ln' | ln' <- shrink ln, not (null ln')]
   shrink (CodeBlock ln) = CodeBlock <$> shrink ln
   shrink Hr = [Hr]
   shrink Br = [Br]
   shrink (Table thead tbody) = Table <$> shrink thead <*> shrink tbody
 
--- TODO: abstract this out
+parsePrettyMD :: MarkdownPrettyPrinter.PP a1 => Parser a2 -> a1 -> Either ParseError a2
+parsePrettyMD p x = parse p "" (markdownPretty x)
+
+parsePrettyHTML :: HTMLPrettyPrinter.PP a1 => Parser a2 -> a1 -> Either ParseError a2
+parsePrettyHTML p x = parse p "" (htmlPretty x)
+
 prop_roundtrip_text :: Text -> Bool
-prop_roundtrip_text t = parse textP "" (markdownPretty t) == Right t
+prop_roundtrip_text t = parsePrettyMD textP t == Right t
 
 prop_roundtrip_line :: S.Line -> Bool
-prop_roundtrip_line l = parse lineP "" (markdownPretty l) == Right l
+prop_roundtrip_line l = parsePrettyMD lineP l == Right l
 
 prop_roundtrip_block :: Block -> Bool
-prop_roundtrip_block b = parse blockP "" (markdownPretty b) == Right b
+prop_roundtrip_block b = parsePrettyMD blockP b == Right b
 
 prop_roundtrip_html_text :: Text -> Bool
-prop_roundtrip_html_text t = parse hTextP "" (htmlPretty t) == Right t
+prop_roundtrip_html_text t = parsePrettyHTML hTextP t == Right t
 
 prop_roundtrip_html_line :: S.Line -> Bool
-prop_roundtrip_html_line l = parse hLineP "" (htmlPretty l) == Right l
+prop_roundtrip_html_line l = parsePrettyHTML hLineP l == Right l
 
 prop_roundtrip_html_block :: Block -> Bool
-prop_roundtrip_html_block b = parse hBlockP "" (htmlPretty b) == Right b
+prop_roundtrip_html_block b = parsePrettyHTML hBlockP b == Right b
 
 prop_roundtrip_full_text :: Text -> Bool
-prop_roundtrip_full_text t = case parse textP "" (markdownPretty t) of
-  Right a -> parse hTextP "" (htmlPretty a) == Right t
+prop_roundtrip_full_text t = case parsePrettyMD textP t of
+  Right a -> parsePrettyHTML hTextP a == Right t
   Left _ -> False
 
 prop_roundtrip_full_line :: S.Line -> Bool
-prop_roundtrip_full_line l = case parse lineP "" (markdownPretty l) of
-  Right l -> parse hLineP "" (htmlPretty l) == Right l
+prop_roundtrip_full_line l = case parsePrettyMD lineP l of
+  Right a -> parsePrettyHTML hLineP a == Right l
   Left _ -> False
 
 prop_roundtrip_full_block :: Block -> Bool
-prop_roundtrip_full_block b = case parse blockP "" (markdownPretty b) of
-  Right b -> parse hBlockP "" (htmlPretty b) == Right b
+prop_roundtrip_full_block b = case parsePrettyMD blockP b of
+  Right a -> parsePrettyHTML hBlockP b == Right b
   Left _ -> False
 
 qc :: IO ()
@@ -160,14 +171,10 @@ qc = do
   QC.quickCheck prop_roundtrip_text
   putStrLn "roundtrip_line"
   QC.quickCheck prop_roundtrip_line
-  -- putStrLn "roundtrip_block"
-  -- QC.quickCheck prop_roundtrip_block
   putStrLn "roundtrip_html_text"
   QC.quickCheck prop_roundtrip_html_text
   putStrLn "roundtrip_html_line"
   QC.quickCheck prop_roundtrip_html_line
-  -- putStrLn "roundtrip_html_block"
-  -- QC.quickCheck prop_roundtrip_html_block
   putStrLn "roundtrip_full_text"
   QC.quickCheck prop_roundtrip_full_text
   putStrLn "roundtrip_full_line"
