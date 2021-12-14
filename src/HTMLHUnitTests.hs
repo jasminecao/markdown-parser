@@ -3,11 +3,7 @@ module HTMLHUnitTests where
 import Data.Char (isSpace)
 import HTMLParser
 import SampleText
-<<<<<<< HEAD
 import Syntax (Block (..), Doc (Doc), Line (..), Text (..), TableHead (..), TableBody (..), TableRow (..), TableCell (..))
-=======
-import Syntax (Block (..), Doc (Doc), Line (..), TableBody, TableCell, TableHead, TableRow, Text (..))
->>>>>>> 99275af9c6d61fdf386d911292ab06f38e5291e4
 import qualified Syntax as S
 import Test.HUnit (Test (TestList), runTestTT, (~:), (~?=))
 import Text.Parsec.Token
@@ -174,19 +170,11 @@ test_hBrPhHrP =
 test_hTableP =
   "table"
     ~: TestList
-<<<<<<< HEAD
       [ p (hTableCellP "td") "<td>abc</td>" ~?= Right (S.TableCell (S.Line [Normal "abc"])),
         p (hTableRowP "td") "<tr><td>abc</td></tr>" ~?= Right (S.TableRow [S.TableCell (S.Line [Normal "abc"])]),
         p (hTableRowP "td") "<tr><td>abc</td><td>def</td></tr>" 
           ~?= Right (S.TableRow [S.TableCell (S.Line [Normal "abc"]), S.TableCell (S.Line [Normal "def"])]),
         p (hTableRowP "td") "<tr><td>abc</td><td>def</td></tr>" 
-=======
-      [ p hTableCellP "<td>abc</td>" ~?= Right (S.TableCell (S.Line [Normal "abc"])),
-        p hTableRowP "<tr><td>abc</td></tr>" ~?= Right (S.TableRow [S.TableCell (S.Line [Normal "abc"])]),
-        p hTableRowP "<tr><td>abc</td><td>def</td></tr>"
-          ~?= Right (S.TableRow [S.TableCell (S.Line [Normal "abc"]), S.TableCell (S.Line [Normal "def"])]),
-        p hTableRowP "<tr><td>abc</td><td>def</td></tr>"
->>>>>>> 99275af9c6d61fdf386d911292ab06f38e5291e4
           ~?= Right (S.TableRow [S.TableCell (S.Line [Normal "abc"]), S.TableCell (S.Line [Normal "def"])]),
         p hTableBodyP "<tbody><tr><td>abc</td><td>def</td></tr></tbody>"
           ~?= Right (S.TableBody [S.TableRow [S.TableCell (S.Line [Normal "abc"]), S.TableCell (S.Line [Normal "def"])]]),
