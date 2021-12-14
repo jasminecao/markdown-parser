@@ -3,7 +3,7 @@ module HUnitTests where
 import Data.Char (isSpace)
 import HTMLParser
 import SampleText
-import Syntax (Block (..), Doc (Doc), Line (..), Text (..))
+import Syntax (Block (..), Doc (Doc), Line (..), Text (..), TableHead, TableBody, TableRow, TableCell)
 import qualified Syntax as S
 import Test.HUnit (Test (TestList), runTestTT, (~:), (~?=))
 import Text.Parsec.Token
@@ -167,10 +167,39 @@ test_hBrPhHrP =
         p hBrP "<br>" ~?= Right Br
       ]
 
--- test_tableP =
---   "table"
---     ~: TestList
---       []
+test_hTableP =
+  "table"
+    ~: TestList
+      [ p hTableCellP "<td>abc</td>" ~?= Right (S.TableCell (S.Line [Normal "abc"])),
+        p hTableRowP "<tr><td>abc</td></tr>" ~?= Right (S.TableRow [S.TableCell (S.Line [Normal "abc"])]),
+        p hTableRowP "<tr><td>abc</td><td>def</td></tr>" 
+          ~?= Right (S.TableRow [S.TableCell (S.Line [Normal "abc"]), S.TableCell (S.Line [Normal "def"])]),
+        p hTableRowP "<tr><td>abc</td><td>def</td></tr>" 
+          ~?= Right (S.TableRow [S.TableCell (S.Line [Normal "abc"]), S.TableCell (S.Line [Normal "def"])]),
+        p hTableBodyP "<tbody><tr><td>abc</td><td>def</td></tr></tbody>" 
+          ~?= Right (S.TableBody [S.TableRow [S.TableCell (S.Line [Normal "abc"]), S.TableCell (S.Line [Normal "def"])]]),
+        p hTableBodyP "<tbody><tr><td>abc</td></tr><tr><td>def</td></tr></tbody>" 
+          ~?= Right (S.TableBody [S.TableRow [S.TableCell (S.Line [Normal "abc"])], S.TableRow [S.TableCell (S.Line [Normal "def"])]]),
+        p hTableHeadP "<thead><tr><td>abc</td><td>def</td></tr></thead>" 
+          ~?= Right (S.TableHead $ S.TableRow [S.TableCell (S.Line [Normal "abc"]), S.TableCell (S.Line [Normal "def"])]),
+        p hTableBodyP "<thead><tr><td>abc</td></tr><tr><td>def</td></tr></thead>"  ~?= Left "No parses",
+        p hTableP 
+          "<table>\
+            \<thead><tr><td>abc</td></tr></thead>\
+            \<tbody><tr><td>def</td></tr></tbody>\
+          \</table>" 
+          ~?= Right (Table (S.TableHead $ S.TableRow [S.TableCell $ S.Line [Normal "abc"]]) (S.TableBody [S.TableRow [S.TableCell $ S.Line [Normal "def"]]])),
+        p hTableP 
+          "<table>\
+            \<thead><tr><td>col1</td></tr></thead>\
+            \<tbody>\
+              \<tr><td>data1</td></tr>\
+              \<tr><td>data2</td></tr>\
+              \<tr><td>data3</td></tr>\
+            \</tbody>\
+          \</table>" 
+          ~?=  Right (Table (S.TableHead (S.TableRow [S.TableCell (S.Line [S.Normal "col1"])])) (S.TableBody [S.TableRow [S.TableCell (S.Line [S.Normal "data1"])],S.TableRow [S.TableCell (S.Line [S.Normal "data2"])],S.TableRow [S.TableCell (S.Line [S.Normal "data3"])]]))
+      ]
 
 test_hBlockP =
   "parsing block"

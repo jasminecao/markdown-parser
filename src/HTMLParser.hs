@@ -117,10 +117,12 @@ hLineP :: Parser S.Line
 hLineP = S.Line <$> many1 hTextP
 
 hTableP :: Parser Block
-hTableP = Table <$> hTableHeadP <*> hTableBodyP
+hTableP = Table <$> 
+  (openingTag "table" *> hTableHeadP) <*> 
+  (hTableBodyP <* closingTag "table")
 
 hTableHeadP :: Parser TableHead
-hTableHeadP = TableHead . TableRow <$> container "tr" hTableCellP
+hTableHeadP = TableHead <$> betweenTag "thead" hTableRowP
 
 hTableBodyP :: Parser TableBody
 hTableBodyP = TableBody <$> container "tbody" hTableRowP
