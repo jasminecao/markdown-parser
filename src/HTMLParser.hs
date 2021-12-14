@@ -3,6 +3,7 @@ module HTMLParser where
 import qualified Control.Monad as Monad
 import Data.Char (isSpace)
 import Data.Functor (($>))
+import Lib
 import Syntax (Block (..), Doc (Doc), Line, TableBody (..), TableCell (..), TableHead (..), TableRow (..), Text (..), htmlTags)
 import qualified Syntax as S
 import Text.Parsec.Token
@@ -10,15 +11,17 @@ import Text.ParserCombinators.Parsec
 
 {- HTML parsers -}
 
+-- | Parses the complete file or text into a Doc type
 parseHtml :: String -> Either ParseError Doc
 parseHtml = parse htmlP ""
 
+-- | Parses a Doc for multiple blocks
 htmlP :: Parser Doc
 htmlP = Doc <$> container "html" hBlockP
 
-
 {- Block parsers -}
 
+-- | Parses for a block of HTML (headings, lists, quotes, code blocks,...)
 hBlockP :: Parser Block
 hBlockP =
   try hImgP
@@ -36,6 +39,7 @@ hBlockP =
 hHeadingP :: Parser Block
 hHeadingP = choice [checkHeader i | i <- [1 .. 6]]
   where
+    -- Creates a parser for the a heading container, given a number
     checkHeader :: Int -> Parser Block
     checkHeader i = try $ Heading i <$> lineContainer ("h" ++ show i)
 
@@ -81,10 +85,10 @@ hLineP = S.Line <$> many1 hTextP
 
 -- | Parses for a table through a table head and table body
 hTableP :: Parser Block
-hTableP = Table <$> 
-  (openingTag "table" *> hTableHeadP) <*> 
-  (hTableBodyP <* closingTag "table")
-
+hTableP =
+  Table
+    <$> (openingTag "table" *> hTableHeadP)
+    <*> (hTableBodyP <* closingTag "table")
 
 {- Table parsers -}
 
@@ -103,7 +107,6 @@ hTableRowP cellTag = TableRow <$> container "tr" (hTableCellP cellTag)
 -- | Parses for a td or th (<td>...</td>, <th>...</th>)
 hTableCellP :: String -> Parser TableCell
 hTableCellP cellTag = TableCell <$> lineContainer cellTag
-
 
 {- Text parsers -}
 
@@ -149,11 +152,12 @@ hNormalP =
                 anyChar
                 ( choice $
                     [try $ lookAhead (openingTag tag) | tag <- htmlTags] -- an opening tag <tag>
-                      ++ [ try $ lookAhead
+                      ++ [ try $
+                             lookAhead
                                (string ('<' : tag) *> manyTill anyChar (string ">"))
                            | tag <- htmlTags
                          ] -- an opening tag with attributes <tag attr="something">
-                      ++ [try $ lookAhead (closingTag tag) | tag <- htmlTags] 
+                      ++ [try $ lookAhead (closingTag tag) | tag <- htmlTags]
                       -- a closing tag </tag>
                 )
             )
@@ -161,14 +165,6 @@ hNormalP =
         )
 
 {- Helper functions -}
-
--- | Parses for text between a beginning and end string
-betweenP :: String -> Parser String
-betweenP str = between (string str) (string str) $ many (noneOf (str ++ "\n"))
-
--- | Parses for the string between quotes
-quotesP :: Parser String
-quotesP = betweenP "\""
 
 -- | Parses for an HTML opening tag <tag>
 openingTag :: String -> Parser String
@@ -201,15 +197,3 @@ attr name = string name *> string "=" *> quotesP
 -- | Parses the value of an attribute from an opening tag (<tag attr="value">)
 openingWithAttr :: String -> String -> Parser String
 openingWithAttr tag name = wsP (string ('<' : tag)) *> wsP (attr name) <* string ">"
-
--- | An adjustment of Parsec's manyTill to not accept the empty string
--- Applies p one or more times until parser end succeeds 
-many1Till :: Parser a -> Parser b -> Parser [a]
-many1Till p end = do
-  x <- p
-  xs <- manyTill p end
-  return (x : xs)
-
--- | Removes trailing whitespace
-wsP :: Parser a -> Parser a
-wsP p = p <* many (satisfy isSpace)

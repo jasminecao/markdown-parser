@@ -5,6 +5,7 @@ import qualified Syntax as S
 import Text.PrettyPrint hiding (braces, parens, sep, (<>))
 import qualified Text.PrettyPrint as PP
 
+-- | Pretty-print a document into HTML
 htmlPretty :: PP a => a -> String
 htmlPretty = PP.render . pp
 
@@ -52,9 +53,11 @@ instance PP S.TableRow where
 instance PP S.TableCell where
   pp (TableCell td) = tag "td" $ pp td
 
+-- | Wraps doc in HTML open and close tags <tag>doc</tag>
 tag :: String -> PP.Doc -> PP.Doc
 tag t = tagWithAttrs t []
 
+-- | Prints tag with list of attributes <tag attr1="val1" attr2="val2">doc</tag>
 tagWithAttrs :: String -> [(String, String)] -> PP.Doc -> PP.Doc
 tagWithAttrs t attrs context =
   PP.text "<" <> PP.text t
@@ -68,7 +71,6 @@ tagWithAttrs t attrs context =
         <> PP.text t
         <> PP.text ">"
     tagWithAttrInner t ((attrName, attrVal) : tl) context =
-      -- attrName = attrVal
       PP.space
         <> PP.text attrName
         <> PP.text "=\""

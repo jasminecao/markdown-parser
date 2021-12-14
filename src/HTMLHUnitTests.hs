@@ -74,7 +74,6 @@ test_hLineP =
         p hLineP "<code>code</code> line" ~?= Right (S.Line [InlineCode "code", Normal " line"]),
         p hLineP "<del>strike</del> <code>code</code> <b>bold</b> <i>italic</i> line"
           ~?= Right (S.Line [Strikethrough "strike", Normal " ", InlineCode "code", Normal " ", Bold "bold", Normal " ", Italic "italic", Normal " line"]),
-        -- TODO: perhaps change this so it doesn't output 2 normals?
         p hLineP "<del>strike</del> <code>code</code> <i>line"
           ~?= Right (S.Line [Strikethrough "strike", Normal " ", InlineCode "code", Normal " ", Normal "<i>line"]),
         p hLineP "<code>code</code> **line"

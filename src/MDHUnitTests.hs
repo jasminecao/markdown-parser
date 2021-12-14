@@ -76,7 +76,6 @@ test_lineP =
         p lineP "`code` line\n" ~?= Right (S.Line [InlineCode "code", Normal " line"]),
         p lineP "~~strike~~ `code` **bold** *italic* line\n"
           ~?= Right (S.Line [Strikethrough "strike", Normal " ", InlineCode "code", Normal " ", Bold "bold", Normal " ", Italic "italic", Normal " line"]),
-        -- TODO: perhaps change this so it doesn't output 2 normals?
         p lineP "~~strike~~ `code` *line\n"
           ~?= Right (S.Line [Strikethrough "strike", Normal " ", InlineCode "code", Normal " ", Normal "*line"]),
         p lineP "`code` **line\nend"

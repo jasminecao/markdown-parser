@@ -35,11 +35,18 @@ instance Arbitrary Text where
         QC.listOf1 arbitrary `QC.suchThat` noInnerLink
 
       noInnerLink :: [Text] -> Bool
-      noInnerLink l = foldr (\x acc -> not (isLink x) && acc) True l && noConsecutiveNormal l
-
-      isLink :: Text -> Bool
-      isLink (Link _ _) = True
-      isLink _ = False
+      noInnerLink l =
+        foldr
+          ( \x acc ->
+              ( case x of
+                  Link _ _ -> False
+                  _ -> True
+              )
+                && acc
+          )
+          True
+          l
+          && noConsecutiveNormal l
 
       genSafeString :: Gen String
       genSafeString =
@@ -59,11 +66,6 @@ instance Arbitrary S.Line where
       genArbitraryLine =
         QC.listOf1 arbitrary
           `QC.suchThat` noConsecutiveNormal
-
-      noConsecutiveNormal :: [Text] -> Bool
-      noConsecutiveNormal [] = True
-      noConsecutiveNormal (Normal _ : Normal _ : _) = False
-      noConsecutiveNormal (_ : rest) = noConsecutiveNormal rest
 
   shrink (S.Line [x]) = S.Line <$> shrink [x]
   shrink (S.Line (x : xs)) = [S.Line xs]

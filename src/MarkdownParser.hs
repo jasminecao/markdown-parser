@@ -3,26 +3,25 @@ module MarkdownParser where
 import qualified Control.Monad as Monad
 import Data.Char (isSpace)
 import Data.Functor (($>))
+import Lib
 import Syntax (Block (..), Doc (Doc), Line, TableBody, TableCell, TableHead, TableRow, Text (..), reservedMarkdownChars)
 import qualified Syntax as S
 import Text.Parsec.Token
 import Text.ParserCombinators.Parsec as Parsec
 
-
 {- Markdown parsers -}
 
--- | Parses the complete file or text into a Doc type.
+-- | Parses the complete file or text into a Doc type
 parseMarkdown :: String -> Either ParseError Doc
 parseMarkdown = parse markdownP ""
 
--- | Parses a Doc from many blocks
+-- | Parses a Doc for multiple blocks
 markdownP :: Parser Doc
 markdownP = Doc <$> many1 blockP
 
-
 {- Block parsers -}
 
--- | Parses for a block of markdown (headings, lists, quotes, code blocks)
+-- | Parses for a block of markdown (headings, lists, quotes, code blocks,...)
 blockP :: Parser Block
 blockP = tryBlockP <* many (string "\n")
   where
@@ -38,7 +37,7 @@ blockP = tryBlockP <* many (string "\n")
         <|> try tableP
         <|> paragraphP
 
--- | Parses for # heading and converts rest of line to Line
+-- | Parses for # heading and converts rest of line to a Line.
 headingP :: Parser Block
 headingP = do
   hx <- wsP $ many1 (char '#')
@@ -49,7 +48,8 @@ headingP = do
 ulListP :: Parser Block
 ulListP =
   UnorderedList <$> do
-    wsP (string "- " <|> string "* ") -- first hyphen must have at least one space after
+    -- first hyphen must have at least one space after
+    wsP (string "- " <|> string "* ")
     firstItem <- lineP
     remainingItems <- many $
       do
@@ -107,7 +107,7 @@ tableP = do
 imgP :: Parser Block
 imgP = string "!" *> (Image <$> bracketsP (many (noneOf "]")) <*> parensP (many1 (noneOf ")")))
 
--- | Parses for a quote block (> quote)
+-- | Parses for a quote block (> Quote)
 quoteP :: Parser Block
 quoteP = BlockQuote <$> many1 quoteNewLinesP
   where
@@ -132,17 +132,15 @@ hrP = string "---" $> Hr
 brP :: Parser Block
 brP = string "\n\n" $> Br
 
-
 {- Line parser -}
 
 -- | Parses a line of text to handle style (bold, italics, inline code, etc)
 lineP :: Parser S.Line
 lineP = S.Line <$> many1 textP <* char '\n'
 
-
 {- Text parsers -}
 
--- | Parses for a text string
+-- | Parses for any decorated or normal text
 textP :: Parser Text
 textP =
   try linkP
@@ -178,33 +176,8 @@ normalP =
   try (Normal <$> stringP)
     <|> Normal <$> many1 (noneOf "\n")
 
-
 {- Helper functions -}
-
--- | Parses for the string between a beginning and end string
-betweenP :: String -> Parser String
-betweenP str = between (string str) (string str) $ many1 (noneOf (str ++ "\n"))
-
--- | Parses for the content between square brackets
-bracketsP :: Parser a -> Parser a
-bracketsP p = string "[" *> p <* optional (string "]")
-
--- | Parses for the content between parentheses
-parensP :: Parser a -> Parser a
-parensP p = string "(" *> p <* string ")"
 
 -- | Parses for a string until a reserved character is found
 stringP :: Parser String
 stringP = many1 $ noneOf reservedMarkdownChars
-
--- | Removes trailing whitespace
-wsP :: Parser a -> Parser a
-wsP p = p <* many (satisfy isSpace)
-
--- | Parser to consume '\n' character
-newLineChar :: Parser String
-newLineChar = string "\n"
-
--- | Parses for an integer
-int :: Parser Int
-int = read <$> many1 digit

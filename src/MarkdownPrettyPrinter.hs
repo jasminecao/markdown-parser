@@ -1,10 +1,11 @@
 module MarkdownPrettyPrinter where
 
-import Syntax (Block (..), Doc (Doc), Line, TableBody (..), TableCell (..), TableHead (..), TableRow (..), Text (..))
+import Syntax (Block (..), Doc (Doc), Line (..), TableBody (..), TableCell (..), TableHead (..), TableRow (..), Text (..))
 import qualified Syntax as S
 import Text.PrettyPrint hiding (braces, parens, sep, (<>))
 import qualified Text.PrettyPrint as PP
 
+-- | Pretty print a document into Markdown
 markdownPretty :: PP a => a -> String
 markdownPretty = PP.render . pp
 
