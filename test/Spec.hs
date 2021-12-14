@@ -1,5 +1,16 @@
+import HTMLHUnitTests
+import MDHUnitTests
+import QCTests
 import Test.HUnit
 import Test.QuickCheck
 
 main :: IO ()
-main = putStrLn "Test suite not yet implemented"
+main = do
+    putStrLn "RUNNING MARKDOWN TESTS"
+    test_md
+    putStrLn "**********************"
+    putStrLn "RUNNING HTML TESTS"
+    test_html
+    putStrLn "**********************"
+    putStrLn "RUNNING QUICKCHECK TESTS"
+    qc
