@@ -1,6 +1,6 @@
 module MarkdownPrettyPrinter where
 
-import Syntax (Block (..), Doc (Doc), Line, Text (..))
+import Syntax (Block (..), Doc (Doc), Line, TableBody (..), TableCell (..), TableHead (..), TableRow (..), Text (..))
 import qualified Syntax as S
 import Text.PrettyPrint hiding (braces, parens, sep, (<>))
 import qualified Text.PrettyPrint as PP
@@ -32,7 +32,22 @@ instance PP S.Block where
   pp (S.CodeBlock str) = PP.text "```\n" <> PP.text str <> PP.text "```"
   pp S.Hr = PP.text "---\n"
   pp S.Br = PP.text "\n\n"
-  pp (S.Table thead tbody) = undefined
+  pp (S.Table thead tbody) = pp thead <> pp tbody
+
+instance PP S.TableHead where
+  pp (S.TableHead ls@(TableRow cells)) =
+    pp ls <> PP.text "|"
+      <> foldr (\x acc -> PP.text "---|" <> acc) PP.empty [1 .. length cells]
+      <> PP.text "\n"
+
+instance PP S.TableBody where
+  pp (S.TableBody trs) = PP.hcat (map pp trs)
+
+instance PP S.TableRow where
+  pp (S.TableRow ls) = PP.text "|" <> PP.hcat (map pp ls) <> PP.text "\n"
+
+instance PP S.TableCell where
+  pp (S.TableCell (S.Line ts)) = PP.hcat (map pp ts) <> PP.text "|"
 
 instance PP S.Line where
   pp (S.Line ts) = PP.hcat (map pp ts) <> PP.text "\n"
