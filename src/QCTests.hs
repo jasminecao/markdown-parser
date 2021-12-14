@@ -6,7 +6,7 @@ import HTMLParser
 import HTMLPrettyPrinter
 import MarkdownParser
 import MarkdownPrettyPrinter
-import Syntax (Block (..), Doc (Doc), Line, Text (..))
+import Syntax (Block (..), Doc (Doc), Line (..), Text (..), TableHead (..), TableBody (..), TableRow (..), TableCell (..))
 import qualified Syntax as S
 import Test.HUnit
 import Test.QuickCheck (Arbitrary, Gen, arbitrary, choose, oneof, shrink)
@@ -39,10 +39,6 @@ instance Arbitrary Text where
       genSafeString =
         QC.listOf1 (QC.elements (['a' .. 'z'] ++ ['A' .. 'Z'] ++ ['0' .. '9']))
 
-  -- ( (arbitrary :: Gen Char)
-  --     `QC.suchThat` (`notElem` reservedMarkdownChars)
-  -- )
-
   shrink (Bold str) = Bold <$> shrink str
   shrink (Italic str) = Italic <$> shrink str
   shrink (Strikethrough str) = Strikethrough <$> shrink str
@@ -67,19 +63,21 @@ instance Arbitrary S.Line where
   shrink (S.Line (x : xs)) = [S.Line xs]
   shrink _ = []
 
--- instance Arbitrary TableType where
---   arbitrary =
---     oneof
---       [ TableHead <$> arbitrary,
---         TableBody <$> arbitrary,
---         TableRow <$> arbitrary,
---         TableCell . S.Line <$> arbitrary
---       ]
+instance Arbitrary TableHead where
+  arbitrary = TableHead <$> arbitrary
+  shrink (TableHead r) = TableHead <$> shrink r
 
---   shrink (TableHead b) = b
---   shrink (TableBody r) = r
---   shrink (TableRow c) = c
---   shrink (TableCell c) = []
+instance Arbitrary TableBody where
+  arbitrary = TableBody <$> arbitrary
+  shrink (TableBody rs) = TableBody <$> concat [shrink r | r <- shrink rs]
+
+instance Arbitrary TableRow where
+  arbitrary = TableRow <$> arbitrary
+  shrink (TableRow r) = TableRow <$> shrink r
+
+instance Arbitrary TableCell where
+  arbitrary = TableCell <$> arbitrary
+  shrink (TableCell c) = TableCell <$> shrink c
 
 instance Arbitrary Block where
   arbitrary =
@@ -101,7 +99,7 @@ instance Arbitrary Block where
       genBlockQuote = BlockQuote <$> QC.listOf1 arbitrary
       genHr = pure Hr
       genBr = pure Br
-      genTable = arbitrary
+      genTable = Table <$> arbitrary <*> arbitrary
 
   shrink (Heading n ln) = Heading n <$> shrink ln
   shrink (Paragraph ln) = Paragraph <$> shrink ln
@@ -113,7 +111,7 @@ instance Arbitrary Block where
   shrink (CodeBlock ln) = CodeBlock <$> shrink ln
   shrink Hr = [Hr]
   shrink Br = [Br]
-  shrink (Table thead tbody) = undefined
+  shrink (Table thead tbody) = Table <$> shrink thead <*> shrink tbody
 
 -- TODO: abstract this out
 prop_roundtrip_text :: Text -> Bool

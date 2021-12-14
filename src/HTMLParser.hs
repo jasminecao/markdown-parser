@@ -53,6 +53,7 @@ hBlockP =
     <|> try hOlListP
     <|> try hQuoteP
     <|> try hCodeBlockP
+    <|> try hTableP
     <|> hParagraphP
 
 -- parses headings
@@ -122,16 +123,16 @@ hTableP = Table <$>
   (hTableBodyP <* closingTag "table")
 
 hTableHeadP :: Parser TableHead
-hTableHeadP = TableHead <$> betweenTag "thead" hTableRowP
+hTableHeadP = TableHead <$> betweenTag "thead" (hTableRowP "th")
 
 hTableBodyP :: Parser TableBody
-hTableBodyP = TableBody <$> container "tbody" hTableRowP
+hTableBodyP = TableBody <$> container "tbody" (hTableRowP "td")
 
-hTableRowP :: Parser TableRow
-hTableRowP = TableRow <$> container "tr" hTableCellP
+hTableRowP :: String -> Parser TableRow
+hTableRowP cellTag = TableRow <$> container "tr" (hTableCellP cellTag)
 
-hTableCellP :: Parser TableCell
-hTableCellP = TableCell <$> lineContainer "td"
+hTableCellP :: String -> Parser TableCell
+hTableCellP cellTag = TableCell <$> lineContainer cellTag
 
 -- parses for a text string
 hTextP :: Parser Text
