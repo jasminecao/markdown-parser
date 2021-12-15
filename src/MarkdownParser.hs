@@ -77,6 +77,9 @@ tableP = do
   remainingRows <- many rowP
   return $ Table (S.TableHead firstRow) (S.TableBody remainingRows)
   where
+    -- parses the pipe character and any spaces/tabs following
+    pipeP :: Parser String
+    pipeP = string "|" <* many (string " " <|> string "\t")
     -- parses for a row of header separators | --- | --- | --- |
     theadSeparatorP :: Parser ()
     theadSeparatorP =
@@ -90,18 +93,13 @@ tableP = do
             newLineChar
       )
         $> ()
-
--- parses the pipe character and any spaces/tabs following
-pipeP :: Parser String
-pipeP = string "|" <* many (string " " <|> string "\t")
-
--- parses a row of table cells
-rowP :: Parser TableRow
-rowP =
-  pipeP
-    *> ( S.TableRow
-           <$> manyTill (S.TableCell . S.Line <$> manyTill (try (specialTextP ['\n', '|'])) (try pipeP)) newLineChar
-       )
+    -- parses a row of table cells
+    rowP :: Parser TableRow
+    rowP =
+      pipeP
+        *> ( S.TableRow
+               <$> manyTill (S.TableCell . S.Line <$> manyTill (try (specialTextP ['\n', '|'])) (try pipeP)) newLineChar
+           )
 
 -- | Parses for an image (![alt](src "title"))
 imgP :: Parser Block
