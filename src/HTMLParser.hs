@@ -47,6 +47,7 @@ hHeadingP = choice [checkHeader i | i <- [1 .. 6]]
 hLiP :: Parser Block
 hLiP = betweenTag "li" hBlockP
 
+-- | Parses for a sublist
 hSubListP :: Int -> Parser Block
 hSubListP level = try (hSubOlListP (level + 1)) <|> hSubUlListP (level + 1)
 
@@ -54,6 +55,7 @@ hSubListP level = try (hSubOlListP (level + 1)) <|> hSubUlListP (level + 1)
 hUlListP :: Parser Block
 hUlListP = hSubUlListP 0
 
+-- | Parses for an unordered sublist (<ul><ul>...</ul></ul>)
 hSubUlListP :: Int -> Parser Block
 hSubUlListP level = flip UnorderedList level <$> 
   container "ul" (try (hSubListP level) <|> hLiP)
@@ -62,6 +64,7 @@ hSubUlListP level = flip UnorderedList level <$>
 hOlListP :: Parser Block
 hOlListP = hSubOlListP 0
 
+-- | Parses for an ordered sublist (<ol><ol>...</ol></ol>)
 hSubOlListP :: Int -> Parser Block
 hSubOlListP level = flip OrderedList level <$> 
   ((,) <$> (read <$> openingWithAttr "ol" "start") <*> 

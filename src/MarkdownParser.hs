@@ -44,6 +44,7 @@ headingP = do
   Monad.guard (length hx < 7)
   Heading (length hx) <$> lineP
 
+-- | Parses for any non-sublist list item
 liP :: Parser Block
 liP = tryLiP <* many newLineChar
   where
@@ -56,6 +57,7 @@ liP = tryLiP <* many newLineChar
         <|> try tableP
         <|> paragraphP
 
+-- | Parses for any sublist
 subListP :: Int -> Parser Block
 subListP level =
   try (wsP (string $ replicate level '\t') *> subUlListP level)
@@ -65,6 +67,7 @@ subListP level =
 ulListP :: Parser Block
 ulListP = subUlListP 0
 
+-- | Parses for an unordered sublist by tab characters (\t- list item)
 subUlListP :: Int -> Parser Block
 subUlListP level =
   flip UnorderedList level <$> do
@@ -83,6 +86,7 @@ subUlListP level =
 olListP :: Parser Block
 olListP = subOlListP 0
 
+-- | Parses for an ordered sublist by tab characters (\t1. list item)
 subOlListP :: Int -> Parser Block
 subOlListP level =
   flip OrderedList level <$> do
