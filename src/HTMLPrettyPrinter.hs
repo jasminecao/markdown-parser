@@ -1,6 +1,6 @@
 module HTMLPrettyPrinter where
 
-import Syntax (Block (..), Doc (Doc), Line, TableBody (..), TableCell (..), TableHead (..), TableRow (..), Text (..))
+import Syntax (Block (..), Doc (Doc), Line (..), TableBody (..), TableCell (..), TableHead (..), TableRow (..), Text (..))
 import qualified Syntax as S
 import Text.PrettyPrint hiding (braces, parens, sep, (<>))
 import qualified Text.PrettyPrint as PP
@@ -18,15 +18,20 @@ instance PP S.Doc where
 instance PP S.Block where
   pp (S.Heading n l) = tag ("h" ++ show n) (pp l)
   pp (S.Paragraph l) = tag "p" (pp l)
-  pp (S.OrderedList (startVal, ls)) =
-    tagWithAttrs "ol" [("start", show startVal)] (PP.hcat $ map (tag "li" . pp) ls)
-  pp (S.UnorderedList ls) = tag "ul" (PP.hcat $ map (tag "li" . pp) ls)
+  pp (S.OrderedList (startVal, ls) _) =
+    tagWithAttrs "ol" [("start", show startVal)] (PP.hcat $ map tagIfNotSublist ls)
+  pp (S.UnorderedList ls _) = tag "ul" (PP.hcat $ map tagIfNotSublist ls)
   pp (S.Image alt src) = tagWithAttrs "img" [("alt", alt), ("src", src)] mempty
   pp (S.BlockQuote ls) = tag "blockquote" (PP.hcat $ map (tag "p" . pp) ls)
   pp (S.CodeBlock str) = tag "pre" $ tag "code" (PP.text str)
   pp S.Hr = PP.text "<hr>"
   pp S.Br = PP.text "<br>"
   pp (S.Table thead tbody) = tag "table" $ PP.hcat [pp thead, pp tbody]
+
+tagIfNotSublist :: Block -> PP.Doc
+tagIfNotSublist x@(UnorderedList _ _) = pp x
+tagIfNotSublist x@(OrderedList _ _) = pp x
+tagIfNotSublist x = (tag "li" . pp) x
 
 instance PP S.Line where
   pp (S.Line ts) = PP.hcat (map pp ts)

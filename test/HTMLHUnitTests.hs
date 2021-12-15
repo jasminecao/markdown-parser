@@ -107,17 +107,29 @@ test_hUlListP =
   "unordered list"
     ~: TestList
       [ p hUlListP "<ul>1</ul>" ~?= Left "No parses",
-        p hUlListP "<ul><li>item 1</li></ul>" ~?= Right (UnorderedList [S.Line [Normal "item 1"]]),
-        p hUlListP "<ul><li>item 1</li></ul>dontparsethis" ~?= Right (UnorderedList [S.Line [Normal "item 1"]]),
-        p hUlListP "<ul><li>item 1</li><li>item 2</li></ul>" ~?= Right (UnorderedList [S.Line [Normal "item 1"], S.Line [Normal "item 2"]])
+        p hUlListP "<ul><li><p>item 1</p></li></ul>" ~?= 
+          Right (UnorderedList [Paragraph $ S.Line [Normal "item 1"]] 0),
+        p hUlListP "<ul><li><p>item 1</p></li></ul>dontparsethis" ~?= 
+          Right (UnorderedList [Paragraph $ S.Line [Normal "item 1"]] 0),
+        p hUlListP "<ul><li><p>item 1</p></li><li><p>item 2</p></li></ul>" ~?= 
+          Right (UnorderedList [Paragraph $ S.Line [Normal "item 1"], Paragraph $ S.Line [Normal "item 2"]] 0),
+        p hUlListP "<ul><li><p>item 1</p></li><ol start=\"2\"><li><p>subitem 1</p></li></ol></ul>" ~?= 
+          Right (UnorderedList 
+                    [ Paragraph $ S.Line [Normal "item 1"],
+                      OrderedList (2, [Paragraph $ S.Line [Normal "subitem 1"]]) 1
+                    ] 
+                0)
       ]
 
 test_hOlListP =
   "ordered list"
     ~: TestList
-      [ p hOlListP "<ol start=\"1\"><li>item 1</li></ol>" ~?= Right (OrderedList (1, [S.Line [Normal "item 1"]])),
-        p hOlListP "<ol start=\"1\"><li>item 1</li><li>item 2</li></ol>" ~?= Right (OrderedList (1, [S.Line [Normal "item 1"], S.Line [Normal "item 2"]])),
-        p hOlListP "<ol start=\"11\"><li>item 1</li><li>item 2</li></ol>" ~?= Right (OrderedList (11, [S.Line [Normal "item 1"], S.Line [Normal "item 2"]]))
+      [ p hOlListP "<ol start=\"1\"><li><p>item 1</p></li></ol>" ~?= 
+          Right (OrderedList (1, [Paragraph $ S.Line [Normal "item 1"]]) 0),
+        p hOlListP "<ol start=\"1\"><li><p>item 1</p></li><li><p>item 2</p></li></ol>" ~?= 
+          Right (OrderedList (1, [Paragraph $ S.Line [Normal "item 1"], Paragraph $ S.Line [Normal "item 2"]]) 0),
+        p hOlListP "<ol start=\"11\"><li><p>item 1</p></li><li><p>item 2</p></li></ol>" ~?= 
+          Right (OrderedList (11, [Paragraph $ S.Line [Normal "item 1"], Paragraph $ S.Line [Normal "item 2"]]) 0)
       ]
 
 test_hImgP =

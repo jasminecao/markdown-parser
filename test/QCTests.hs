@@ -109,15 +109,22 @@ instance Arbitrary Block where
     where
       genHeading = (Heading <$> choose (1, 6)) <*> arbitrary
       genParagraph = Paragraph <$> arbitrary
-      genOrderedList = OrderedList <$> Monad.liftM2 (,) ((arbitrary :: Gen Int) `QC.suchThat` (>= 0)) (QC.listOf1 arbitrary)
-      genUnorderedList = UnorderedList <$> QC.sized gen
+      genOrderedList = flip OrderedList 0 <$> Monad.liftM2 (,) ((arbitrary :: Gen Int) `QC.suchThat` (>= 0)) (QC.listOf1 genBlock')
+      genUnorderedList = flip UnorderedList 0 <$> QC.sized gen
         where
-          gen :: Int -> Gen [S.Line]
+          gen :: Int -> Gen [Block]
           gen n =
             QC.frequency
-              [ (1, fmap (: []) (arbitrary :: Gen S.Line)),
-                (n, Monad.liftM2 (:) (arbitrary :: Gen S.Line) (gen (n `div` 2)))
+              [ (1, fmap (: []) genBlock'),
+                (n, Monad.liftM2 (:) genBlock' (gen (n `div` 2)))
               ]
+      genBlock' = oneof
+        [ genHeading,
+          genParagraph,
+          genBlockQuote,
+          genHr,
+          genBr
+        ]
       genBlockQuote = BlockQuote <$> QC.listOf1 arbitrary
       genHr = pure Hr
       genBr = pure Br
@@ -125,8 +132,8 @@ instance Arbitrary Block where
 
   shrink (Heading n ln) = Heading n <$> shrink ln
   shrink (Paragraph ln) = Paragraph <$> shrink ln
-  shrink (OrderedList (i, ln)) = [OrderedList (i, ln') | ln' <- shrink ln, not (null ln')]
-  shrink (UnorderedList ln) = [UnorderedList ln' | ln' <- shrink ln, not (null ln')]
+  shrink (OrderedList (i, ln) level) = [OrderedList (i, ln') level | ln' <- shrink ln, not (null ln')]
+  shrink (UnorderedList ln level) = [UnorderedList ln' level | ln' <- shrink ln, not (null ln')]
   shrink (Image alt src) = Image alt <$> shrink src
   shrink (BlockQuote ln) = [BlockQuote ln' | ln' <- shrink ln, not (null ln')]
   shrink (CodeBlock ln) = CodeBlock <$> shrink ln

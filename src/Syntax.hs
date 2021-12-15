@@ -10,8 +10,8 @@ newtype Doc = Doc [Block]
 data Block
   = Heading Int Line
   | Paragraph Line -- p
-  | OrderedList (Int, [Line]) -- start value, items
-  | UnorderedList [Line]
+  | OrderedList (Int, [Block]) Int -- (start value, items) level
+  | UnorderedList [Block] Int -- items level
   | Image String String -- alt src
   | BlockQuote [Line]
   | CodeBlock String

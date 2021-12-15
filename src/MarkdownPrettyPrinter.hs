@@ -21,13 +21,31 @@ instance PP S.Block where
       <> PP.space
       <> pp l
   pp (S.Paragraph l) = pp l
-  pp (S.OrderedList (i, ls)) = printListItem i ls
+  pp (S.OrderedList (i, ls) level) = printOrderedListItem level i ls
     where
-      printListItem :: Int -> [S.Line] -> PP.Doc
-      printListItem i [] = mempty
-      printListItem i (l : ls) =
-        PP.text (show i) <> PP.text ". " <> pp l <> printListItem (i + 1) ls
-  pp (S.UnorderedList ls) = PP.hcat $ map ((PP.text "- " <>) . pp) ls
+      printOrderedListItem :: Int -> Int -> [S.Block] -> PP.Doc
+      printOrderedListItem level i [] = mempty
+      printOrderedListItem level i (ol@(OrderedList _ _) : ls) = 
+        pp ol <> printOrderedListItem level (i + 1) ls
+      printOrderedListItem level i (ul@(UnorderedList _ _) : ls) = 
+        pp ul <> printOrderedListItem level (i + 1) ls
+      printOrderedListItem level i (l : ls) =
+        PP.text (replicate level '\t') 
+          <> PP.text (show i) 
+          <> PP.text ". " 
+          <> pp l 
+          <> printOrderedListItem level (i + 1) ls
+  pp (S.UnorderedList ls level) = printUnorderedListItem level ls
+    where
+      printUnorderedListItem :: Int -> [S.Block] -> PP.Doc
+      printUnorderedListItem level [] = mempty
+      printUnorderedListItem level (ol@(OrderedList _ _) : ls) = pp ol <> printUnorderedListItem level ls
+      printUnorderedListItem level (ul@(UnorderedList _ _) : ls) = pp ul <> printUnorderedListItem level ls
+      printUnorderedListItem level (l : ls) =
+        PP.text (replicate level '\t') 
+          <> PP.text "- " 
+          <> pp l
+          <> printUnorderedListItem level ls
   pp (S.Image alt src) = PP.text "!" <> PP.brackets (PP.text alt) <> PP.parens (PP.text src)
   pp (S.BlockQuote ls) = PP.hcat $ map ((PP.text ">" <>) . pp) ls
   pp (S.CodeBlock str) = PP.text "```\n" <> PP.text str <> PP.text "```"

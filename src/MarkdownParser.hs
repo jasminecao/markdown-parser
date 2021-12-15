@@ -44,29 +44,55 @@ headingP = do
   Monad.guard (length hx < 7)
   Heading (length hx) <$> lineP
 
+liP :: Parser Block
+liP = tryLiP <* many newLineChar
+  where
+    tryLiP = try brP
+        <|> try hrP
+        <|> try headingP
+        <|> try quoteP
+        <|> try codeBlockP
+        <|> try tableP
+        <|> paragraphP
+
+subListP :: Int -> Parser Block 
+subListP level = 
+  try (wsP (string $ replicate level '\t') *> subUlListP level)
+    <|> (wsP (string $ replicate level '\t') *> subOlListP level)
+
 -- | Parses for an unordered list (- list item)
 ulListP :: Parser Block
-ulListP =
-  UnorderedList <$> do
-    -- first hyphen must have at least one space after
-    wsP (string "- " <|> string "* ")
-    firstItem <- lineP
-    remainingItems <- many $
-      do
-        wsP (string "-" <|> string "*")
-        lineP
+ulListP = subUlListP 0
+
+subUlListP :: Int -> Parser Block
+subUlListP level =
+  flip UnorderedList level <$> do
+    wsP (string "- " <|> string "* ") -- first hyphen must have at least one space after
+    firstItem <- liP
+    remainingItems <- many (
+        try (subListP (level + 1))
+        <|> do
+          string (replicate level '\t') *> wsP (string "-" <|> string "*")
+          liP
+        )
     return $ firstItem : remainingItems
 
 -- | Parses for an ordered list (1. list item)
 olListP :: Parser Block
-olListP =
-  OrderedList <$> do
-    startVal <- int <* wsP (string ". ")
-    firstItem <- lineP
-    remainingItems <- many $
-      do
-        int <* wsP (string ".")
-        lineP
+olListP = subOlListP 0
+
+subOlListP :: Int -> Parser Block
+subOlListP level =
+  flip OrderedList level <$> do
+    startVal <- int
+    wsP (string ". ")
+    firstItem <- liP
+    remainingItems <- many (
+        try (subListP (level + 1))
+        <|> do
+          string (replicate level '\t') *> int <* wsP (string ".")
+          blockP
+      )
     return (startVal, firstItem : remainingItems)
 
 -- | Parses for a table

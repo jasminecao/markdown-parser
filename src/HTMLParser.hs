@@ -44,16 +44,28 @@ hHeadingP = choice [checkHeader i | i <- [1 .. 6]]
     checkHeader i = try $ Heading i <$> lineContainer ("h" ++ show i)
 
 -- | Parses for a list item
-hLiP :: Parser S.Line
-hLiP = lineContainer "li"
+hLiP :: Parser Block
+hLiP = betweenTag "li" hBlockP
+
+hSubListP :: Int -> Parser Block
+hSubListP level = try (hSubOlListP (level + 1)) <|> hSubUlListP (level + 1)
 
 -- | Parses for an unordered list (<ul><li></li>...</ul>)
 hUlListP :: Parser Block
-hUlListP = UnorderedList <$> container "ul" hLiP
+hUlListP = hSubUlListP 0
+
+hSubUlListP :: Int -> Parser Block
+hSubUlListP level = flip UnorderedList level <$> 
+  container "ul" (try (hSubListP level) <|> hLiP)
 
 -- | Parses for an ordered list (<ol><li></li>...</ol>)
 hOlListP :: Parser Block
-hOlListP = OrderedList <$> ((,) <$> (read <$> openingWithAttr "ol" "start") <*> manyTill hLiP (try (closingTag "ol")))
+hOlListP = hSubOlListP 0
+
+hSubOlListP :: Int -> Parser Block
+hSubOlListP level = flip OrderedList level <$> 
+  ((,) <$> (read <$> openingWithAttr "ol" "start") <*> 
+  manyTill (try (hSubListP level) <|> hLiP) (try (closingTag "ol")))
 
 -- | Parses for an image (<img src=\"url\">()
 hImgP :: Parser Block
