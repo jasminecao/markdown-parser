@@ -99,31 +99,39 @@ test_ulListP =
   "unordered list"
     ~: TestList
       [ p ulListP "-1\n" ~?= Left "No parses",
-        p ulListP "- item 1\n" ~?= 
-          Right (UnorderedList [Paragraph $ Line [Normal "item 1"]] 0),
-        p ulListP "- item 1\ndontparsethis" ~?= 
-          Right (UnorderedList [Paragraph $ Line [Normal "item 1"]] 0),
-        p ulListP "- item 1\n- item 2\n" ~?= 
-          Right (UnorderedList [Paragraph $ S.Line [Normal "item 1"], Paragraph $ S.Line [Normal "item 2"]] 0),
-        p ulListP "- item 1\n-item 2\n" ~?= 
-          Right (UnorderedList [Paragraph $ S.Line [Normal "item 1"], Paragraph $ S.Line [Normal "item 2"]] 0),
-        p ulListP "* item 1\n* item 2\n" ~?= 
-          Right (UnorderedList [Paragraph $ S.Line [Normal "item 1"], Paragraph $ S.Line [Normal "item 2"]] 0),
-        p ulListP "- item 1\n\t- subitem 1\n" ~?= 
-          Right (UnorderedList [Paragraph $ S.Line [Normal "item 1"], UnorderedList [Paragraph $ S.Line [Normal "subitem 1"]] 1] 0),
-        p ulListP "- item 1\n\t- subitem 1\n\t\t- subsubitem 1\n" ~?= 
-          Right (
-            UnorderedList [Paragraph $ S.Line [Normal "item 1"], 
-              UnorderedList [Paragraph $ S.Line [Normal "subitem 1"],
-                UnorderedList [Paragraph $ S.Line [Normal "subsubitem 1"]] 2
-              ] 1] 0),
-        p ulListP "- item 1\n\t- subitem 1\n- item 2\n" ~?= 
-          Right (
-            UnorderedList [
-              Paragraph $ S.Line [Normal "item 1"], 
-              UnorderedList [Paragraph $ S.Line [Normal "subitem 1"]] 1,
-              Paragraph $ S.Line [Normal "item 2"]
-            ] 0)
+        p ulListP "- item 1\n"
+          ~?= Right (UnorderedList [Paragraph $ Line [Normal "item 1"]] 0),
+        p ulListP "- item 1\ndontparsethis"
+          ~?= Right (UnorderedList [Paragraph $ Line [Normal "item 1"]] 0),
+        p ulListP "- item 1\n- item 2\n"
+          ~?= Right (UnorderedList [Paragraph $ S.Line [Normal "item 1"], Paragraph $ S.Line [Normal "item 2"]] 0),
+        p ulListP "- item 1\n-item 2\n"
+          ~?= Right (UnorderedList [Paragraph $ S.Line [Normal "item 1"], Paragraph $ S.Line [Normal "item 2"]] 0),
+        p ulListP "* item 1\n* item 2\n"
+          ~?= Right (UnorderedList [Paragraph $ S.Line [Normal "item 1"], Paragraph $ S.Line [Normal "item 2"]] 0),
+        p ulListP "- item 1\n\t- subitem 1\n"
+          ~?= Right (UnorderedList [Paragraph $ S.Line [Normal "item 1"], UnorderedList [Paragraph $ S.Line [Normal "subitem 1"]] 1] 0),
+        p ulListP "- item 1\n\t- subitem 1\n\t\t- subsubitem 1\n"
+          ~?= Right
+            ( UnorderedList
+                [ Paragraph $ S.Line [Normal "item 1"],
+                  UnorderedList
+                    [ Paragraph $ S.Line [Normal "subitem 1"],
+                      UnorderedList [Paragraph $ S.Line [Normal "subsubitem 1"]] 2
+                    ]
+                    1
+                ]
+                0
+            ),
+        p ulListP "- item 1\n\t- subitem 1\n- item 2\n"
+          ~?= Right
+            ( UnorderedList
+                [ Paragraph $ S.Line [Normal "item 1"],
+                  UnorderedList [Paragraph $ S.Line [Normal "subitem 1"]] 1,
+                  Paragraph $ S.Line [Normal "item 2"]
+                ]
+                0
+            )
       ]
 
 test_olListP =
@@ -138,15 +146,6 @@ test_olListP =
             ( OrderedList (1, [Paragraph $ S.Line [Normal "item 1"], Paragraph $ S.Line [Normal "item 2"]]) 0
             )
       ]
-      -- [ p olListP "1.1" ~?= Left "No parses",
-      --   p olListP "1. item 1\n" ~?= Right (OrderedList (1, [S.Line [Normal "item 1"]])),
-      --   p olListP "1. item 1\n2. item 2\n" ~?= Right (OrderedList (1, [S.Line [Normal "item 1"], S.Line [Normal "item 2"]])),
-      --   p olListP "11. item 1\n2. item 2\n" ~?= Right (OrderedList (11, [S.Line [Normal "item 1"], S.Line [Normal "item 2"]])),
-      --   p olListP "1. item 1\n2.item 2\n"
-      --     ~?= Right
-      --       ( OrderedList (1, [S.Line [Normal "item 1"], S.Line [Normal "item 2"]])
-      --       )
-      -- ]
 
 test_linkP =
   "link"
@@ -226,10 +225,20 @@ test_markdownP =
   "markdown doc"
     ~: TestList
       [ p markdownP "# Heading 1\n"
-          ~?= Right (Doc [Heading 1 (S.Line [Normal "Heading 1"])])
-        -- p markdownP sampleText
-        --   ~?= Right
-        --     (Doc [Heading 1 (Line [Normal "Heading 1"]), Paragraph (Line [Normal "This is ", InlineCode "inline code", Normal ". "]), Paragraph (Line [Bold "bold", Normal ", ", Italic "italic", Normal ", ", Strikethrough "struckthrough"]), CodeBlock "fold :: (a -> b -> b) -> b -> [a] -> b\nfold f z [] = z\nfold f z (x:xs) = f x (fold f z xs)\n", OrderedList (3, [Line [Normal "This is a numbered list."], Line [Normal "This is the second item."], Line [Normal "This is the third item."]])])
+          ~?= Right (Doc [Heading 1 (S.Line [Normal "Heading 1"])]),
+        p markdownP sampleText
+          ~?= Right
+            ( Doc
+                [ Heading
+                    1
+                    ( S.Line [Normal "Heading 1"]
+                    ),
+                  Paragraph (S.Line [Normal "This is ", InlineCode "inline code", Normal ". "]),
+                  Paragraph (S.Line [Bold "bold", Normal ", ", Italic "italic", Normal ", ", Strikethrough "struckthrough"]),
+                  CodeBlock "fold :: (a -> b -> b) -> b -> [a] -> b\nfold f z [] = z\nfold f z (x:xs) = f x (fold f z xs)\n",
+                  OrderedList (3, [Paragraph (S.Line [Normal "This is a numbered list."]), Paragraph (S.Line [Normal "This is the second item."]), Paragraph (S.Line [Normal "This is the third item."])]) 0
+                ]
+            )
       ]
 
 markdownTests =

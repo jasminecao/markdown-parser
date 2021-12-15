@@ -47,7 +47,8 @@ headingP = do
 liP :: Parser Block
 liP = tryLiP <* many newLineChar
   where
-    tryLiP = try brP
+    tryLiP =
+      try brP
         <|> try hrP
         <|> try headingP
         <|> try quoteP
@@ -55,8 +56,8 @@ liP = tryLiP <* many newLineChar
         <|> try tableP
         <|> paragraphP
 
-subListP :: Int -> Parser Block 
-subListP level = 
+subListP :: Int -> Parser Block
+subListP level =
   try (wsP (string $ replicate level '\t') *> subUlListP level)
     <|> (wsP (string $ replicate level '\t') *> subOlListP level)
 
@@ -69,11 +70,12 @@ subUlListP level =
   flip UnorderedList level <$> do
     wsP (string "- " <|> string "* ") -- first hyphen must have at least one space after
     firstItem <- liP
-    remainingItems <- many (
-        try (subListP (level + 1))
-        <|> do
-          string (replicate level '\t') *> wsP (string "-" <|> string "*")
-          liP
+    remainingItems <-
+      many
+        ( try (subListP (level + 1))
+            <|> do
+              string (replicate level '\t') *> wsP (string "-" <|> string "*")
+              liP
         )
     return $ firstItem : remainingItems
 
@@ -87,18 +89,19 @@ subOlListP level =
     startVal <- int
     wsP (string ". ")
     firstItem <- liP
-    remainingItems <- many (
-        try (subListP (level + 1))
-        <|> do
-          string (replicate level '\t') *> int <* wsP (string ".")
-          blockP
-      )
+    remainingItems <-
+      many
+        ( try (subListP (level + 1))
+            <|> do
+              string (replicate level '\t') *> int <* wsP (string ".")
+              blockP
+        )
     return (startVal, firstItem : remainingItems)
 
 -- | Parses for a table
 tableP :: Parser Block
 tableP = do
-  firstRow <- rowP <* try theadSeparatorP
+  firstRow <- rowP <* theadSeparatorP
   remainingRows <- many rowP
   return $ Table (S.TableHead firstRow) (S.TableBody remainingRows)
   where
