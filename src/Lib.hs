@@ -10,7 +10,7 @@ int = read <$> many1 digit
 
 -- | Parses for the content between square brackets
 bracketsP :: Parser a -> Parser a
-bracketsP p = string "[" *> p <* optional (string "]")
+bracketsP p = string "[" *> p <* string "]"
 
 -- | Parses for the content between parentheses
 parensP :: Parser a -> Parser a

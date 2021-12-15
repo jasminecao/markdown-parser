@@ -77,10 +77,6 @@ tableP = do
   remainingRows <- many rowP
   return $ Table (S.TableHead firstRow) (S.TableBody remainingRows)
   where
-    -- parses the pipe character and any spaces/tabs following
-    pipeP :: Parser String
-    pipeP = string "|" <* many (string " " <|> string "\t")
-
     -- parses for a row of header separators | --- | --- | --- |
     theadSeparatorP :: Parser ()
     theadSeparatorP =
@@ -95,13 +91,17 @@ tableP = do
       )
         $> ()
 
-    -- parses a row of table cells
-    rowP :: Parser TableRow
-    rowP =
-      pipeP
-        *> ( S.TableRow
-               <$> manyTill (S.TableCell . S.Line <$> manyTill (try textP) (try pipeP)) newLineChar
-           )
+-- parses the pipe character and any spaces/tabs following
+pipeP :: Parser String
+pipeP = string "|" <* many (string " " <|> string "\t")
+
+-- parses a row of table cells
+rowP :: Parser TableRow
+rowP =
+  pipeP
+    *> ( S.TableRow
+           <$> manyTill (S.TableCell . S.Line <$> manyTill (try (specialTextP ['\n', '|'])) (try pipeP)) newLineChar
+       )
 
 -- | Parses for an image (![alt](src "title"))
 imgP :: Parser Block
@@ -142,17 +142,22 @@ lineP = S.Line <$> many1 textP <* char '\n'
 
 -- | Parses for any decorated or normal text
 textP :: Parser Text
-textP =
+textP = specialTextP ['\n']
+
+specialTextP :: [Char] -> Parser Text
+specialTextP specialChars = decoratedTextP <|> try (normalP specialChars)
+
+decoratedTextP :: Parser Text
+decoratedTextP =
   try linkP
     <|> try italicP
     <|> try boldP
     <|> try strikeP
     <|> try inlineCodeP
-    <|> try normalP
 
 -- | Parses for a link ([text](link))
 linkP :: Parser Text
-linkP = S.Link <$> bracketsP (manyTill textP (string "]")) <*> parensP (many (noneOf ")"))
+linkP = S.Link <$> (string "[" *> manyTill (specialTextP ['\n', ']']) (string "]")) <*> parensP (many (noneOf ")"))
 
 -- | Parses for a bold string (**text**)
 boldP :: Parser Text
@@ -171,10 +176,11 @@ inlineCodeP :: Parser Text
 inlineCodeP = InlineCode <$> betweenP "`"
 
 -- | Parses for a normal, undecorated string
-normalP :: Parser Text
-normalP =
-  try (Normal <$> stringP)
-    <|> Normal <$> many1 (noneOf "\n")
+normalP :: [Char] -> Parser Text
+normalP specialChars = Normal <$> (try (manyTill specialCharP (try (lookAhead decoratedTextP))) <|> many1 specialCharP)
+  where
+    specialCharP :: Parser Char
+    specialCharP = noneOf specialChars
 
 {- Helper functions -}
 

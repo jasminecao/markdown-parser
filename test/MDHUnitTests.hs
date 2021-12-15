@@ -55,7 +55,7 @@ test_inlineCodeP =
 test_normalP =
   "normal text"
     ~: TestList
-      [ p normalP "regular text" ~?= Right (Normal "regular text")
+      [ p (normalP ['\n']) "regular text" ~?= Right (Normal "regular text")
       ]
 
 test_textP =
@@ -77,11 +77,11 @@ test_lineP =
         p lineP "~~strike~~ `code` **bold** *italic* line\n"
           ~?= Right (S.Line [Strikethrough "strike", Normal " ", InlineCode "code", Normal " ", Bold "bold", Normal " ", Italic "italic", Normal " line"]),
         p lineP "~~strike~~ `code` *line\n"
-          ~?= Right (S.Line [Strikethrough "strike", Normal " ", InlineCode "code", Normal " ", Normal "*line"]),
+          ~?= Right (S.Line [Strikethrough "strike", Normal " ", InlineCode "code", Normal " *line"]),
         p lineP "`code` **line\nend"
-          ~?= Right (S.Line [InlineCode "code", Normal " ", Normal "**line"]),
+          ~?= Right (S.Line [InlineCode "code", Normal " **line"]),
         p lineP "regular text _not**line\n"
-          ~?= Right (Line [Normal "regular text ", Normal "_not**line"]),
+          ~?= Right (Line [Normal "regular text _not**line"]),
         p lineP "``\n" ~?= Right (S.Line [Normal "``"])
       ]
 

@@ -25,7 +25,7 @@ We wrote HUnit and QuickCheck tests in this directory.
 - `MDHUnitTests.hs` contains unit tests for each markdown parser element to ensure that they are translated correctly into our AST elements.
 - `HTMLHUnitTests.hs` contains unit tests for each HTML parser.
 - `SampleText.hs` contains sample text test cases for larger blocks of text.
-- `QCTests.hs` contains our quickCheck tests with arbitrary generators for each of our AST elements and roundtrip properties to test our Markdown Parsers and HTML Pretty Printing. This includes properties for AST => Markdown Pretty Print => Markdown Parse => AST, AST -> HTML Pretty Print -> HTML Parse -> AST, and AST -> Markdown Pretty Print -> Markdown Parse -> AST -> HTML Pretty Print -> HTML Parse -> AST.
+- `QCTests.hs` contains our quickCheck tests with arbitrary generators for each of our AST elements and roundtrip properties to test our Markdown Parsers and HTML Pretty Printing. This includes properties for AST => Markdown Pretty Print => Markdown Parse => AST, AST -> HTML Pretty Print -> HTML Parse -> AST, and AST -> Markdown Pretty Print -> **Markdown Parse -> AST -> HTML Pretty Print** -> HTML Parse -> AST.
 
 ## Order to Read Components
 
