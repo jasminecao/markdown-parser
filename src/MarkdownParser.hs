@@ -4,7 +4,7 @@ import qualified Control.Monad as Monad
 import Data.Char (isSpace)
 import Data.Functor (($>))
 import Lib
-import Syntax (Block (..), Doc (Doc), Line, TableBody, TableCell, TableHead, TableRow, Text (..), reservedMarkdownChars)
+import Syntax (Block (..), Doc (Doc), Line, TableBody, TableCell, TableHead, TableRow, Text (..))
 import qualified Syntax as S
 import Text.Parsec.Token
 import Text.ParserCombinators.Parsec as Parsec
@@ -23,7 +23,7 @@ markdownP = Doc <$> many1 blockP
 
 -- | Parses for a block of markdown (headings, lists, quotes, code blocks,...)
 blockP :: Parser Block
-blockP = tryBlockP <* many (string "\n")
+blockP = tryBlockP <* many newLineChar
   where
     tryBlockP =
       try imgP
@@ -61,8 +61,7 @@ ulListP =
 olListP :: Parser Block
 olListP =
   OrderedList <$> do
-    startVal <- int
-    wsP (string ". ")
+    startVal <- int <* wsP (string ". ")
     firstItem <- lineP
     remainingItems <- many $
       do
@@ -101,7 +100,7 @@ tableP = do
                <$> manyTill (S.TableCell . S.Line <$> manyTill (try (specialTextP ['\n', '|'])) (try pipeP)) newLineChar
            )
 
--- | Parses for an image (![alt](src "title"))
+-- | Parses for an image (![alt](./image.jpg))
 imgP :: Parser Block
 imgP = string "!" *> (Image <$> bracketsP (many (noneOf "]")) <*> parensP (many1 (noneOf ")")))
 
@@ -134,7 +133,7 @@ brP = string "\n\n" $> Br
 
 -- | Parses a line of text to handle style (bold, italics, inline code, etc)
 lineP :: Parser S.Line
-lineP = S.Line <$> many1 textP <* char '\n'
+lineP = S.Line <$> many1 textP <* newLineChar
 
 {- Text parsers -}
 
@@ -142,9 +141,11 @@ lineP = S.Line <$> many1 textP <* char '\n'
 textP :: Parser Text
 textP = specialTextP ['\n']
 
+-- | Parses for any decorated or normal text with the exception of specialChars
 specialTextP :: [Char] -> Parser Text
 specialTextP specialChars = decoratedTextP <|> try (normalP specialChars)
 
+-- | Parses for any decorated text
 decoratedTextP :: Parser Text
 decoratedTextP =
   try linkP
@@ -173,15 +174,9 @@ strikeP = Strikethrough <$> betweenP "~~"
 inlineCodeP :: Parser Text
 inlineCodeP = InlineCode <$> betweenP "`"
 
--- | Parses for a normal, undecorated string
+-- | Parses for a normal, undecorated string with exception to specialChars
 normalP :: [Char] -> Parser Text
 normalP specialChars = Normal <$> (try (manyTill specialCharP (try (lookAhead decoratedTextP))) <|> many1 specialCharP)
   where
     specialCharP :: Parser Char
     specialCharP = noneOf specialChars
-
-{- Helper functions -}
-
--- | Parses for a string until a reserved character is found
-stringP :: Parser String
-stringP = many1 $ noneOf reservedMarkdownChars

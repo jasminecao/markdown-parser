@@ -52,11 +52,6 @@ data Text
   | Normal String
   deriving (Eq, Show)
 
-
--- | Reserved Markdown characters
-reservedMarkdownChars :: [Char]
-reservedMarkdownChars = ['*', '~', '`', '>', '_', '[', ']', '|', '\n']
-
 -- | Reserved HTML tags
 htmlTags :: [String]
 htmlTags =
